@@ -1,6 +1,6 @@
 {
   "name": "change_log_action",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "private": true,
   "description": "Github action 自动生成 changelog",
   "main": "lib/main.js",
