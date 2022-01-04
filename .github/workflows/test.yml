@@ -1,0 +1,19 @@
+# GitHub Actions 入门教程 https://www.ruanyifeng.com/blog/2019/09/getting-started-with-github-actions.html
+name: 'build-test'
+on: # 可以监听的列表 https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - '**.md'
+jobs:
+  test: # make sure the action works on a clean machine without building
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        uses: bahmutov/npm-install@v1
+      - uses: ./
+        id: code-check
+        with:
+          githubToken: ${{ secrets.ACCESS_TOKEN }}
