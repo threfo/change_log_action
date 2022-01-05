@@ -2,8 +2,7 @@
 name: 'changelog comment'
 on: # 可以监听的列表 https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows
   pull_request:
-    branches:
-      - ['master', 'main']
+    branches: ['master', 'main']
     paths-ignore:
       - '**.md'
 jobs:
