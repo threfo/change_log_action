@@ -3,7 +3,14 @@ import {InputOptionsType} from '../type'
 export const getCommitObj = (item: any) => {
   console.log('getCommitObj', item)
 
-  return item
+  const {commit, html_url} = item || {}
+  const {author, message} = commit || {}
+
+  return {
+    html_url,
+    author,
+    message
+  }
 }
 
 export const getCommentBody = (list: any[], inputOptions: InputOptionsType) => {
