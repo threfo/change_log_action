@@ -38,12 +38,6 @@ export const getPrCommitId = () => {
   return after
 }
 
-export const getPrCommits = () => {
-  const {payload} = context || {}
-  const {commits} = payload
-  return commits || []
-}
-
 export const getUpdatePrUrl = (): string => {
   return `https://api.github.com/repos/${getRepository()}/pulls/${getPullNumber()}`
 }
@@ -51,7 +45,12 @@ export const getCommentsPrUrl = (): string => {
   return `https://api.github.com/repos/${getRepository()}/pulls/${getPullNumber()}/comments`
 }
 
+export const getPrCommitsUrl = (): string => {
+  return `https://api.github.com/repos/${getRepository()}/pulls/${getPullNumber()}/commits`
+}
+
 export const getGithubToken = () => {
+  console.log('getGithubToken')
   return getInput('githubToken', {
     required: true
   })
@@ -81,6 +80,7 @@ export const getCommentPrProps = (
   body: string,
   props?: any
 ): AxiosRequestConfig => {
+  console.log('getCommentPrProps body', body)
   return {
     method: 'POST',
     headers: {
@@ -97,6 +97,21 @@ export const getCommentPrProps = (
     }
   }
 }
+
+export const getPrCommitsProps = (): AxiosRequestConfig => {
+  console.log('getPrCommitsProps')
+  return {
+    method: 'GET',
+    headers: {
+      Accept: 'application/vnd.github.v3+json',
+      'content-type': 'application/json',
+      Authorization: `Bearer ${getGithubToken()}`
+    },
+    url: getPrCommitsUrl()
+  }
+}
+
+export const getPrCommits = async () => await axios(getPrCommitsProps())
 
 export const closePr = async (title: string, body: string) =>
   await axios(getClosePrAxiosProps(title, body))
