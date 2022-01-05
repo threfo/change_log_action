@@ -101,5 +101,8 @@ export const getCommentPrProps = (
 export const closePr = async (title: string, body: string) =>
   await axios(getClosePrAxiosProps(title, body))
 
-export const commentPr = async (body: string, props?: any) =>
-  await axios(getCommentPrProps(body, body))
+export const commentPr = async (body: string, props?: any) => {
+  const apiProps = getCommentPrProps(body, props)
+  console.log('commentPr apiProps', apiProps)
+  await axios(apiProps)
+}
