@@ -9,11 +9,7 @@ console.log('github.context', context)
 async function run(): Promise<void> {
   try {
     // 获取其他必要的参数
-    const inputOptions = {
-      // eslintFiles: parseInputArray(eslintFiles),
-      // eslintConfig,
-      // eslintExtensions: parseInputArray(eslintExtensions)
-    }
+    const inputOptions = {}
     debug(`options:${inputOptions}`)
 
     // 核心action代码
