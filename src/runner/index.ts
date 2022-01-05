@@ -5,7 +5,11 @@ import {getCommitObj, getCommentBody} from '../utils/format'
 
 export const runAction = async (inputOptions: InputOptionsType) => {
   // 获取 commit list
-  const list: any[] = getPrCommits()
+  const res = await getPrCommits()
+  console.log('getPrCommits res', res)
+  const {data} = res || {}
+  const list: any[] = data as any[]
+  console.log('getPrCommits list', list)
 
   // 解析 格式化 list
   // 评论到当前 pr

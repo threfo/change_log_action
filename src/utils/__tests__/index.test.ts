@@ -5,9 +5,10 @@ import {
   getRepository,
   getPullNumber,
   getPrCommitId,
-  getPrCommits,
+  getPrCommitsProps,
   getUpdatePrUrl,
   getCommentsPrUrl,
+  getPrCommitsUrl,
   getGithubToken,
   getClosePrAxiosProps,
   getCommentPrProps
@@ -60,8 +61,10 @@ test('src/utils/index.ts getPrCommitId', () => {
   expect(getPrCommitId()).toBe('after')
 })
 
-test('src/utils/index.ts getPrCommits', () => {
-  expect(getPrCommits()).toBe('commits')
+test('src/utils/index.ts getPrCommitsUrl', () => {
+  expect(getPrCommitsUrl()).toBe(
+    'https://api.github.com/repos/a/b/pulls/number/commits'
+  )
 })
 
 test('src/utils/index.ts getUpdatePrUrl', () => {
@@ -76,6 +79,20 @@ test('src/utils/index.ts getCommentsPrUrl', () => {
 
 test('src/utils/index.ts getGithubToken', () => {
   expect(getGithubToken()).toBe('githubToken')
+})
+
+test('src/utils/index.ts getPrCommitsProps', () => {
+  expect(JSON.stringify(getPrCommitsProps())).toBe(
+    JSON.stringify({
+      method: 'GET',
+      headers: {
+        Accept: 'application/vnd.github.v3+json',
+        'content-type': 'application/json',
+        Authorization: `Bearer githubToken`
+      },
+      url: 'https://api.github.com/repos/a/b/pulls/number/commits'
+    })
+  )
 })
 
 test('src/utils/index.ts getClosePrAxiosProps', () => {
