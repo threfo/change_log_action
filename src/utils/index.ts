@@ -41,9 +41,6 @@ export const getPrCommitId = () => {
 export const getUpdatePrUrl = (): string => {
   return `https://api.github.com/repos/${getRepository()}/pulls/${getPullNumber()}`
 }
-export const getCommentsPrUrl = (): string => {
-  return `https://api.github.com/repos/${getRepository()}/pulls/${getPullNumber()}/comments`
-}
 
 export const getPrCommitsUrl = (): string => {
   return `https://api.github.com/repos/${getRepository()}/pulls/${getPullNumber()}/commits`
@@ -56,57 +53,49 @@ export const getGithubToken = () => {
   })
 }
 
-export const getClosePrAxiosProps = (
+export const getHeaders = () => ({
+  Accept: 'application/vnd.github.v3+json',
+  'content-type': 'application/json',
+  Authorization: `Bearer ${getGithubToken()}`
+})
+
+export const getUpdatePrAxiosProps = (
   title: string,
-  body: string
+  body: string,
+  state?: string
 ): AxiosRequestConfig => {
   return {
     method: 'PATCH',
-    headers: {
-      Accept: 'application/vnd.github.v3+json',
-      'content-type': 'application/json',
-      Authorization: `Bearer ${getGithubToken()}`
-    },
+    headers: getHeaders(),
     url: getUpdatePrUrl(),
     data: {
       title,
       body,
-      state: 'close'
+      state
     }
   }
 }
 
+export const getClosePrAxiosProps = (
+  title: string,
+  body: string
+): AxiosRequestConfig => {
+  return getUpdatePrAxiosProps(title, body, 'close')
+}
+
 export const getCommentPrProps = (
   body: string,
-  props?: any
+  state?: string
 ): AxiosRequestConfig => {
   console.log('getCommentPrProps body', body)
-  return {
-    method: 'POST',
-    headers: {
-      Accept: 'application/vnd.github.v3+json',
-      'content-type': 'application/json',
-      Authorization: `Bearer ${getGithubToken()}`
-    },
-    url: getCommentsPrUrl(),
-    data: {
-      start_side: 'RIGHT',
-      commit_id: getPrCommitId(),
-      body,
-      ...(props || {})
-    }
-  }
+  return getUpdatePrAxiosProps('CHANGELOG tips', body, state)
 }
 
 export const getPrCommitsProps = (): AxiosRequestConfig => {
   console.log('getPrCommitsProps')
   return {
     method: 'GET',
-    headers: {
-      Accept: 'application/vnd.github.v3+json',
-      'content-type': 'application/json',
-      Authorization: `Bearer ${getGithubToken()}`
-    },
+    headers: getHeaders(),
     url: getPrCommitsUrl()
   }
 }
@@ -116,8 +105,8 @@ export const getPrCommits = async () => await axios(getPrCommitsProps())
 export const closePr = async (title: string, body: string) =>
   await axios(getClosePrAxiosProps(title, body))
 
-export const commentPr = async (body: string, props?: any) => {
-  const apiProps = getCommentPrProps(body, props)
+export const commentPr = async (body: string, state?: string) => {
+  const apiProps = getCommentPrProps(body, state)
   console.log('commentPr apiProps', apiProps)
   await axios(apiProps)
 }

@@ -1,0 +1,15 @@
+
+@token=abc
+
+get https://api.github.com/repos/threfo/change_log_action/pulls/1/commits
+
+###
+PATCH https://api.github.com/repos/threfo/change_log_action/pulls/1
+Accept: application/vnd.github.v3+json
+content-type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "body": "test",
+  "title": "title test"
+}

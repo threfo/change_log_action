@@ -7,7 +7,6 @@ import {
   getPrCommitId,
   getPrCommitsProps,
   getUpdatePrUrl,
-  getCommentsPrUrl,
   getPrCommitsUrl,
   getGithubToken,
   getClosePrAxiosProps,
@@ -71,12 +70,6 @@ test('src/utils/index.ts getUpdatePrUrl', () => {
   expect(getUpdatePrUrl()).toBe('https://api.github.com/repos/a/b/pulls/number')
 })
 
-test('src/utils/index.ts getCommentsPrUrl', () => {
-  expect(getCommentsPrUrl()).toBe(
-    'https://api.github.com/repos/a/b/pulls/number/comments'
-  )
-})
-
 test('src/utils/index.ts getGithubToken', () => {
   expect(getGithubToken()).toBe('githubToken')
 })
@@ -115,20 +108,19 @@ test('src/utils/index.ts getClosePrAxiosProps', () => {
 })
 
 test('src/utils/index.ts getCommentPrProps', () => {
-  expect(JSON.stringify(getCommentPrProps('body', {test: 'test'}))).toBe(
+  expect(JSON.stringify(getCommentPrProps('body', 'close'))).toBe(
     JSON.stringify({
-      method: 'POST',
+      method: 'PATCH',
       headers: {
         Accept: 'application/vnd.github.v3+json',
         'content-type': 'application/json',
         Authorization: `Bearer githubToken`
       },
-      url: 'https://api.github.com/repos/a/b/pulls/number/comments',
+      url: 'https://api.github.com/repos/a/b/pulls/number',
       data: {
-        start_side: 'RIGHT',
-        commit_id: 'after',
+        title: 'CHANGELOG tips',
         body: 'body',
-        test: 'test'
+        state: 'close'
       }
     })
   )

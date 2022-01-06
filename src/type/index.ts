@@ -1,1 +1,3 @@
-export interface InputOptionsType {}
+export interface InputOptionsType {
+  state?: string
+}
