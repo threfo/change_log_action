@@ -61,7 +61,11 @@ const utils_1 = __nccwpck_require__(1606);
 const format_1 = __nccwpck_require__(1264);
 const runAction = (inputOptions) => __awaiter(void 0, void 0, void 0, function* () {
     // 获取 commit list
-    const list = (0, utils_1.getPrCommits)();
+    const res = yield (0, utils_1.getPrCommits)();
+    console.log('getPrCommits res', res);
+    const { data } = res || {};
+    const list = data;
+    console.log('getPrCommits list', list);
     // 解析 格式化 list
     // 评论到当前 pr
     yield (0, utils_1.commentPr)((0, format_1.getCommentBody)(list.map(format_1.getCommitObj), inputOptions));
@@ -77,13 +81,71 @@ exports.runAction = runAction;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getCommentBody = exports.getCommitObj = void 0;
+exports.getCommentBody = exports.getCommitObj = exports.message2Obj = exports.header2Obj = exports.tapd2Obj = exports.notGitMoJiTitle2Obj = exports.haveGitMoJiTitle2Obj = exports.fixColon = void 0;
+const gitMoJiStartExp = /^(?::\w*:|(?:\ud83c[\udf00-\udfff])|(?:\ud83d[\udc00-\ude4f\ude80-\udeff])|[\u2600-\u2B55])\s(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/;
+const notGitMoJiStartExp = /^(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/;
+const tapdExp = /^--(?<type>\w*)\W(?<ticket>\d*)(?:\s\S*)?\s(?:【(?<scope>.*)】)?(?<subject>(?:(?!h).)*(?:(?!\s).))\s?(?<url>http.*)?$/;
+const fixColon = (str) => {
+    return str.replace(/：/g, ':');
+};
+exports.fixColon = fixColon;
+const haveGitMoJiTitle2Obj = (str) => {
+    const [, type, scope, subject, ticket] = gitMoJiStartExp.exec(str) || [];
+    return { type, scope, subject, ticket };
+};
+exports.haveGitMoJiTitle2Obj = haveGitMoJiTitle2Obj;
+const notGitMoJiTitle2Obj = (str) => {
+    const [, type, scope, subject, ticket] = notGitMoJiStartExp.exec(str) || [];
+    return { type, scope, subject, ticket };
+};
+exports.notGitMoJiTitle2Obj = notGitMoJiTitle2Obj;
+const tapd2Obj = (str) => {
+    // --bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/23766501/s/1238756
+    const [, type, ticket, scope, subject] = tapdExp.exec(str) || [];
+    return { type, scope, subject, ticket };
+};
+exports.tapd2Obj = tapd2Obj;
+const header2Obj = (str) => {
+    const header1 = (0, exports.haveGitMoJiTitle2Obj)(str);
+    const header2 = (0, exports.notGitMoJiTitle2Obj)(str);
+    const header3 = (0, exports.tapd2Obj)(str);
+    return [header1, header2, header3].reduce((obj, item) => {
+        Object.keys(item).forEach(key => {
+            const val = item[key];
+            if (val) {
+                obj[key] = val;
+            }
+        });
+        return obj;
+    }, { type: undefined, scope: undefined, subject: str, ticket: undefined });
+};
+exports.header2Obj = header2Obj;
+const message2Obj = (msg) => {
+    const [header = '', body, footer] = msg.split('\n\n');
+    const { type, scope, subject, ticket } = (0, exports.header2Obj)(header);
+    return {
+        header,
+        body,
+        footer,
+        type,
+        scope,
+        subject,
+        ticket
+    };
+};
+exports.message2Obj = message2Obj;
 const getCommitObj = (item) => {
-    console.log(item);
-    return item;
+    console.log('getCommitObj', item);
+    const { commit, html_url } = item || {};
+    const { author, message } = commit || {};
+    return Object.assign({ html_url,
+        author,
+        message }, (0, exports.message2Obj)(message));
 };
 exports.getCommitObj = getCommitObj;
 const getCommentBody = (list, inputOptions) => {
+    console.log('getCommentBody list', list);
+    console.log('getCommentBody inputOptions', inputOptions);
     return `getCommentBody: ${JSON.stringify(list)}， inputOptions： ${JSON.stringify(inputOptions)}`;
 };
 exports.getCommentBody = getCommentBody;
@@ -128,7 +190,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.commentPr = exports.closePr = exports.getCommentPrProps = exports.getClosePrAxiosProps = exports.getGithubToken = exports.getCommentsPrUrl = exports.getUpdatePrUrl = exports.getPrCommits = exports.getPrCommitId = exports.getPullNumber = exports.getRepository = exports.getPackageJson = exports.getPackageJsonPath = exports.getProjectFilePath = void 0;
+exports.commentPr = exports.closePr = exports.getPrCommits = exports.getPrCommitsProps = exports.getCommentPrProps = exports.getClosePrAxiosProps = exports.getGithubToken = exports.getPrCommitsUrl = exports.getCommentsPrUrl = exports.getUpdatePrUrl = exports.getPrCommitId = exports.getPullNumber = exports.getRepository = exports.getPackageJson = exports.getPackageJsonPath = exports.getProjectFilePath = void 0;
 const axios_1 = __importDefault(__nccwpck_require__(6545));
 const path_1 = __importDefault(__nccwpck_require__(5622));
 const github_1 = __nccwpck_require__(5438);
@@ -167,12 +229,6 @@ const getPrCommitId = () => {
     return after;
 };
 exports.getPrCommitId = getPrCommitId;
-const getPrCommits = () => {
-    const { payload } = github_1.context || {};
-    const { commits } = payload;
-    return commits || [];
-};
-exports.getPrCommits = getPrCommits;
 const getUpdatePrUrl = () => {
     return `https://api.github.com/repos/${(0, exports.getRepository)()}/pulls/${(0, exports.getPullNumber)()}`;
 };
@@ -181,7 +237,12 @@ const getCommentsPrUrl = () => {
     return `https://api.github.com/repos/${(0, exports.getRepository)()}/pulls/${(0, exports.getPullNumber)()}/comments`;
 };
 exports.getCommentsPrUrl = getCommentsPrUrl;
+const getPrCommitsUrl = () => {
+    return `https://api.github.com/repos/${(0, exports.getRepository)()}/pulls/${(0, exports.getPullNumber)()}/commits`;
+};
+exports.getPrCommitsUrl = getPrCommitsUrl;
 const getGithubToken = () => {
+    console.log('getGithubToken');
     return (0, core_1.getInput)('githubToken', {
         required: true
     });
@@ -205,6 +266,7 @@ const getClosePrAxiosProps = (title, body) => {
 };
 exports.getClosePrAxiosProps = getClosePrAxiosProps;
 const getCommentPrProps = (body, props) => {
+    console.log('getCommentPrProps body', body);
     return {
         method: 'POST',
         headers: {
@@ -217,9 +279,28 @@ const getCommentPrProps = (body, props) => {
     };
 };
 exports.getCommentPrProps = getCommentPrProps;
+const getPrCommitsProps = () => {
+    console.log('getPrCommitsProps');
+    return {
+        method: 'GET',
+        headers: {
+            Accept: 'application/vnd.github.v3+json',
+            'content-type': 'application/json',
+            Authorization: `Bearer ${(0, exports.getGithubToken)()}`
+        },
+        url: (0, exports.getPrCommitsUrl)()
+    };
+};
+exports.getPrCommitsProps = getPrCommitsProps;
+const getPrCommits = () => __awaiter(void 0, void 0, void 0, function* () { return yield (0, axios_1.default)((0, exports.getPrCommitsProps)()); });
+exports.getPrCommits = getPrCommits;
 const closePr = (title, body) => __awaiter(void 0, void 0, void 0, function* () { return yield (0, axios_1.default)((0, exports.getClosePrAxiosProps)(title, body)); });
 exports.closePr = closePr;
-const commentPr = (body, props) => __awaiter(void 0, void 0, void 0, function* () { return yield (0, axios_1.default)((0, exports.getCommentPrProps)(body, body)); });
+const commentPr = (body, props) => __awaiter(void 0, void 0, void 0, function* () {
+    const apiProps = (0, exports.getCommentPrProps)(body, props);
+    console.log('commentPr apiProps', apiProps);
+    yield (0, axios_1.default)(apiProps);
+});
 exports.commentPr = commentPr;
 
 
