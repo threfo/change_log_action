@@ -1,5 +1,13 @@
-import {test, expect, jest, beforeAll} from '@jest/globals'
-import {getCommitObj} from '../format'
+import {test, expect} from '@jest/globals'
+import {
+  getCommitObj,
+  message2Obj,
+  haveGitMoJiTitle2Obj,
+  notGitMoJiTitle2Obj,
+  fixColon,
+  header2Obj,
+  tapd2Obj
+} from '../format'
 
 const mockData = [
   {
@@ -17,7 +25,8 @@ const mockData = [
         email: 'liurongliang@balloai.com',
         date: '2022-01-05T06:14:15Z'
       },
-      message: '📝 docs: 更新README',
+      message:
+        '✅ fix(模块): 测试一下完成的\n\n这是body\n这是body这是body这是body这是body这是body这是body这是body这是body\n这是body\n\n这是footer\n这是footer\n这是footer',
       tree: {
         sha: '71df2a085cd89ae69500c1a9bbbb044d594397da',
         url: 'https://api.github.com/repos/threfo/change_log_action/git/trees/71df2a085cd89ae69500c1a9bbbb044d594397da'
@@ -139,8 +148,368 @@ const mockData = [
   }
 ]
 
+test('src/utils/format.ts fixColon', () => {
+  expect(fixColon('：')).toBe(':')
+  expect(fixColon('：:')).toBe('::')
+  expect(fixColon('：：')).toBe('::')
+  expect(fixColon(':')).toBe(':')
+})
+
+test('src/utils/format.ts haveGitMoJiTitle2Obj', () => {
+  expect(
+    JSON.stringify(haveGitMoJiTitle2Obj('✅ fix(模块): 测试一下完成的 #12'))
+  ).toBe(
+    JSON.stringify({
+      type: 'fix',
+      scope: '模块',
+      subject: '测试一下完成的',
+      ticket: '#12'
+    })
+  )
+  expect(
+    JSON.stringify(haveGitMoJiTitle2Obj(':memo: fix(模块): 测试一下完成的 #12'))
+  ).toBe(
+    JSON.stringify({
+      type: 'fix',
+      scope: '模块',
+      subject: '测试一下完成的',
+      ticket: '#12'
+    })
+  )
+  expect(
+    JSON.stringify(haveGitMoJiTitle2Obj(':memo: fix: 测试一下完成的'))
+  ).toBe(
+    JSON.stringify({
+      type: 'fix',
+      scope: undefined,
+      subject: '测试一下完成的',
+      ticket: undefined
+    })
+  )
+  // 没有 MoJi
+  expect(JSON.stringify(haveGitMoJiTitle2Obj('fix: 测试一下完成的'))).toBe(
+    JSON.stringify({
+      type: undefined,
+      scope: undefined,
+      subject: undefined,
+      ticket: undefined
+    })
+  )
+  // 没有空格
+  expect(
+    JSON.stringify(haveGitMoJiTitle2Obj(':memo:fix:测试一下完成的#12'))
+  ).toBe(
+    JSON.stringify({
+      type: undefined,
+      scope: undefined,
+      subject: undefined,
+      ticket: undefined
+    })
+  )
+})
+
+test('src/utils/format.ts notGitMoJiTitle2Obj', () => {
+  expect(
+    JSON.stringify(notGitMoJiTitle2Obj('✅ fix(模块): 测试一下完成的 #12'))
+  ).toBe(
+    JSON.stringify({
+      type: undefined,
+      scope: undefined,
+      subject: undefined,
+      ticket: undefined
+    })
+  )
+  expect(
+    JSON.stringify(notGitMoJiTitle2Obj(':memo: fix(模块): 测试一下完成的 #12'))
+  ).toBe(
+    JSON.stringify({
+      type: undefined,
+      scope: undefined,
+      subject: undefined,
+      ticket: undefined
+    })
+  )
+  expect(
+    JSON.stringify(notGitMoJiTitle2Obj('fix(模块): 测试一下完成的 #12'))
+  ).toBe(
+    JSON.stringify({
+      type: 'fix',
+      scope: '模块',
+      subject: '测试一下完成的',
+      ticket: '#12'
+    })
+  )
+
+  expect(JSON.stringify(notGitMoJiTitle2Obj('fix: 测试一下完成的'))).toBe(
+    JSON.stringify({
+      type: 'fix',
+      scope: undefined,
+      subject: '测试一下完成的',
+      ticket: undefined
+    })
+  )
+  // 没有空格
+  expect(JSON.stringify(notGitMoJiTitle2Obj('fix:测试一下完成的'))).toBe(
+    JSON.stringify({
+      type: undefined,
+      scope: undefined,
+      subject: undefined,
+      ticket: undefined
+    })
+  )
+})
+
+test('src/utils/format.ts tapd2Obj', () => {
+  expect(JSON.stringify(tapd2Obj('✅ fix(模块): 测试一下完成的 #12'))).toBe(
+    JSON.stringify({
+      type: undefined,
+      scope: undefined,
+      subject: undefined,
+      ticket: undefined
+    })
+  )
+  expect(JSON.stringify(tapd2Obj(':memo: fix(模块): 测试一下完成的 #12'))).toBe(
+    JSON.stringify({
+      type: undefined,
+      scope: undefined,
+      subject: undefined,
+      ticket: undefined
+    })
+  )
+  expect(JSON.stringify(tapd2Obj('fix(模块): 测试一下完成的 #12'))).toBe(
+    JSON.stringify({
+      type: undefined,
+      scope: undefined,
+      subject: undefined,
+      ticket: undefined
+    })
+  )
+
+  expect(
+    JSON.stringify(
+      tapd2Obj(
+        '--bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/23766501/s/1238756'
+      )
+    )
+  ).toBe(
+    JSON.stringify({
+      type: 'bug',
+      scope: '面试官工作台',
+      subject: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
+      ticket: '1010381'
+    })
+  )
+  expect(
+    JSON.stringify(
+      tapd2Obj(
+        '--bug=1010381 --user=Thomas 简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/23766501/s/1238756'
+      )
+    )
+  ).toBe(
+    JSON.stringify({
+      type: 'bug',
+      scope: undefined,
+      subject: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
+      ticket: '1010381'
+    })
+  )
+
+  expect(
+    JSON.stringify(
+      tapd2Obj(
+        '--bug=1010381 简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据'
+      )
+    )
+  ).toBe(
+    JSON.stringify({
+      type: 'bug',
+      scope: undefined,
+      subject: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
+      ticket: '1010381'
+    })
+  )
+})
+
+test('src/utils/format.ts header2Obj', () => {
+  expect(JSON.stringify(header2Obj('✅ fix(模块): 测试一下完成的 #12'))).toBe(
+    JSON.stringify({
+      type: 'fix',
+      scope: '模块',
+      subject: '测试一下完成的',
+      ticket: '#12'
+    })
+  )
+  expect(
+    JSON.stringify(header2Obj(':memo: fix(模块): 测试一下完成的 #12'))
+  ).toBe(
+    JSON.stringify({
+      type: 'fix',
+      scope: '模块',
+      subject: '测试一下完成的',
+      ticket: '#12'
+    })
+  )
+  expect(JSON.stringify(header2Obj('fix(模块): 测试一下完成的 #12'))).toBe(
+    JSON.stringify({
+      type: 'fix',
+      scope: '模块',
+      subject: '测试一下完成的',
+      ticket: '#12'
+    })
+  )
+  expect(JSON.stringify(header2Obj('fix: 测试一下完成的'))).toBe(
+    JSON.stringify({
+      type: 'fix',
+      scope: undefined,
+      subject: '测试一下完成的',
+      ticket: undefined
+    })
+  )
+  expect(JSON.stringify(header2Obj('测试一下完成的'))).toBe(
+    JSON.stringify({
+      type: undefined,
+      scope: undefined,
+      subject: '测试一下完成的',
+      ticket: undefined
+    })
+  )
+  expect(
+    JSON.stringify(
+      header2Obj(
+        '--bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/23766501/s/1238756'
+      )
+    )
+  ).toBe(
+    JSON.stringify({
+      type: 'bug',
+      scope: '面试官工作台',
+      subject: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
+      ticket: '1010381'
+    })
+  )
+})
+
+test('src/utils/format.ts message2Obj', () => {
+  expect(
+    JSON.stringify(
+      message2Obj(
+        '✅ fix(模块): 测试一下完成的\n\n这是body\n这是body这是body这是body这是body这是body这是body这是body这是body\n这是body\n\n这是footer\n这是footer\n这是footer'
+      )
+    )
+  ).toBe(
+    JSON.stringify({
+      header: '✅ fix(模块): 测试一下完成的',
+      body: '这是body\n这是body这是body这是body这是body这是body这是body这是body这是body\n这是body',
+      footer: '这是footer\n这是footer\n这是footer',
+      type: 'fix',
+      scope: '模块',
+      subject: '测试一下完成的',
+      ticket: undefined
+    })
+  )
+
+  expect(
+    JSON.stringify(
+      message2Obj(
+        ':memo: fix(模块): 测试一下完成的\n\n这是body\n这是body这是body这是body这是body这是body这是body这是body这是body\n这是body\n\n这是footer\n这是footer\n这是footer'
+      )
+    )
+  ).toBe(
+    JSON.stringify({
+      header: ':memo: fix(模块): 测试一下完成的',
+      body: '这是body\n这是body这是body这是body这是body这是body这是body这是body这是body\n这是body',
+      footer: '这是footer\n这是footer\n这是footer',
+      type: 'fix',
+      scope: '模块',
+      subject: '测试一下完成的',
+      ticket: undefined
+    })
+  )
+
+  expect(
+    JSON.stringify(
+      message2Obj(
+        '--bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/23766501/s/1238756'
+      )
+    )
+  ).toBe(
+    JSON.stringify({
+      header:
+        '--bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/23766501/s/1238756',
+      body: undefined,
+      footer: undefined,
+      type: 'bug',
+      scope: '面试官工作台',
+      subject: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
+      ticket: '1010381'
+    })
+  )
+
+  expect(
+    JSON.stringify(
+      message2Obj('简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据')
+    )
+  ).toBe(
+    JSON.stringify({
+      header: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
+      body: undefined,
+      footer: undefined,
+      type: undefined,
+      scope: undefined,
+      subject: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
+      ticket: undefined
+    })
+  )
+})
+
 test('src/utils/format.ts getCommitObj', () => {
-  expect(JSON.stringify(getCommitObj(mockData[0]))).toBe(
+  const testData = {
+    sha: '84e9deb0b8795a649f1d8940de59e1d88d23dc36',
+    node_id:
+      'C_kwDOGl8KJ9oAKDg0ZTlkZWIwYjg3OTVhNjQ5ZjFkODk0MGRlNTllMWQ4OGQyM2RjMzY',
+    commit: {
+      author: {
+        name: 'thomas-ballo',
+        email: 'liurongliang@balloai.com',
+        date: '2022-01-05T06:14:15Z'
+      },
+      committer: {
+        name: 'thomas-ballo',
+        email: 'liurongliang@balloai.com',
+        date: '2022-01-05T06:14:15Z'
+      },
+      message:
+        '✅ fix(模块): 测试一下完成的\n\n这是body\n这是body这是body这是body这是body这是body这是body这是body这是body\n这是body\n\n这是footer\n这是footer\n这是footer',
+      tree: {
+        sha: '71df2a085cd89ae69500c1a9bbbb044d594397da',
+        url: 'https://api.github.com/repos/threfo/change_log_action/git/trees/71df2a085cd89ae69500c1a9bbbb044d594397da'
+      },
+      url: 'https://api.github.com/repos/threfo/change_log_action/git/commits/84e9deb0b8795a649f1d8940de59e1d88d23dc36',
+      comment_count: 0,
+      verification: {
+        verified: false,
+        reason: 'unsigned',
+        signature: null,
+        payload: null
+      }
+    },
+    url: 'https://api.github.com/repos/threfo/change_log_action/commits/84e9deb0b8795a649f1d8940de59e1d88d23dc36',
+    html_url:
+      'https://github.com/threfo/change_log_action/commit/84e9deb0b8795a649f1d8940de59e1d88d23dc36',
+    comments_url:
+      'https://api.github.com/repos/threfo/change_log_action/commits/84e9deb0b8795a649f1d8940de59e1d88d23dc36/comments',
+    author: null,
+    committer: null,
+    parents: [
+      {
+        sha: 'e1b277c632c4bc6e63b305bed802b2954841795e',
+        url: 'https://api.github.com/repos/threfo/change_log_action/commits/e1b277c632c4bc6e63b305bed802b2954841795e',
+        html_url:
+          'https://github.com/threfo/change_log_action/commit/e1b277c632c4bc6e63b305bed802b2954841795e'
+      }
+    ]
+  }
+  expect(JSON.stringify(getCommitObj(testData))).toBe(
     JSON.stringify({
       html_url:
         'https://github.com/threfo/change_log_action/commit/84e9deb0b8795a649f1d8940de59e1d88d23dc36',
@@ -149,7 +518,15 @@ test('src/utils/format.ts getCommitObj', () => {
         email: 'liurongliang@balloai.com',
         date: '2022-01-05T06:14:15Z'
       },
-      message: '📝 docs: 更新README'
+      message:
+        '✅ fix(模块): 测试一下完成的\n\n这是body\n这是body这是body这是body这是body这是body这是body这是body这是body\n这是body\n\n这是footer\n这是footer\n这是footer',
+      header: '✅ fix(模块): 测试一下完成的',
+      body: '这是body\n这是body这是body这是body这是body这是body这是body这是body这是body\n这是body',
+      footer: '这是footer\n这是footer\n这是footer',
+      type: 'fix',
+      scope: '模块',
+      subject: '测试一下完成的',
+      ticket: undefined
     })
   )
 })
