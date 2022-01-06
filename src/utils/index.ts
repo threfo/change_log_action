@@ -46,6 +46,10 @@ export const getPrCommitsUrl = (): string => {
   return `https://api.github.com/repos/${getRepository()}/pulls/${getPullNumber()}/commits`
 }
 
+export const getCommentPrUrl = (): string => {
+  return `https://api.github.com/repos/${getRepository()}/issues/${getPullNumber()}/comments`
+}
+
 export const getGithubToken = () => {
   console.log('getGithubToken')
   return getInput('githubToken', {
@@ -83,12 +87,16 @@ export const getClosePrAxiosProps = (
   return getUpdatePrAxiosProps(title, body, 'close')
 }
 
-export const getCommentPrProps = (
-  body: string,
-  state?: string
-): AxiosRequestConfig => {
+export const getCommentPrProps = (body: string): AxiosRequestConfig => {
   console.log('getCommentPrProps body', body)
-  return getUpdatePrAxiosProps('CHANGELOG tips', body, state)
+  return {
+    method: 'POST',
+    headers: getHeaders(),
+    url: getCommentPrUrl(),
+    data: {
+      body
+    }
+  }
 }
 
 export const getPrCommitsProps = (): AxiosRequestConfig => {
@@ -105,8 +113,8 @@ export const getPrCommits = async () => await axios(getPrCommitsProps())
 export const closePr = async (title: string, body: string) =>
   await axios(getClosePrAxiosProps(title, body))
 
-export const commentPr = async (body: string, state?: string) => {
-  const apiProps = getCommentPrProps(body, state)
+export const commentPr = async (body: string) => {
+  const apiProps = getCommentPrProps(body)
   console.log('commentPr apiProps', apiProps)
   await axios(apiProps)
 }

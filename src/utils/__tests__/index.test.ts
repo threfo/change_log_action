@@ -10,7 +10,8 @@ import {
   getPrCommitsUrl,
   getGithubToken,
   getClosePrAxiosProps,
-  getCommentPrProps
+  getCommentPrProps,
+  getCommentPrUrl
 } from '../index'
 
 jest.mock('@actions/github', () => ({
@@ -70,6 +71,12 @@ test('src/utils/index.ts getUpdatePrUrl', () => {
   expect(getUpdatePrUrl()).toBe('https://api.github.com/repos/a/b/pulls/number')
 })
 
+test('src/utils/index.ts getCommentPrUrl', () => {
+  expect(getCommentPrUrl()).toBe(
+    'https://api.github.com/repos/a/b/issues/number/comments'
+  )
+})
+
 test('src/utils/index.ts getGithubToken', () => {
   expect(getGithubToken()).toBe('githubToken')
 })
@@ -108,19 +115,17 @@ test('src/utils/index.ts getClosePrAxiosProps', () => {
 })
 
 test('src/utils/index.ts getCommentPrProps', () => {
-  expect(JSON.stringify(getCommentPrProps('body', 'close'))).toBe(
+  expect(JSON.stringify(getCommentPrProps('body'))).toBe(
     JSON.stringify({
-      method: 'PATCH',
+      method: 'POST',
       headers: {
         Accept: 'application/vnd.github.v3+json',
         'content-type': 'application/json',
         Authorization: `Bearer githubToken`
       },
-      url: 'https://api.github.com/repos/a/b/pulls/number',
+      url: 'https://api.github.com/repos/a/b/issues/number/comments',
       data: {
-        title: 'CHANGELOG tips',
-        body: 'body',
-        state: 'close'
+        body: 'body'
       }
     })
   )

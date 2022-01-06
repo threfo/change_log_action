@@ -66,10 +66,9 @@ const runAction = (inputOptions) => __awaiter(void 0, void 0, void 0, function* 
     const { data } = res || {};
     const list = data;
     console.log('getPrCommits list', list);
-    const { state } = inputOptions || {};
     // 解析 格式化 list
     // 评论到当前 pr
-    yield (0, utils_1.commentPr)((0, format_1.getCommentBody)(list.map(format_1.getCommitObj), inputOptions), state);
+    yield (0, utils_1.commentPr)((0, format_1.getCommentBody)(list.map(format_1.getCommitObj), inputOptions));
 });
 exports.runAction = runAction;
 
@@ -191,7 +190,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.commentPr = exports.closePr = exports.getPrCommits = exports.getPrCommitsProps = exports.getCommentPrProps = exports.getClosePrAxiosProps = exports.getUpdatePrAxiosProps = exports.getHeaders = exports.getGithubToken = exports.getPrCommitsUrl = exports.getUpdatePrUrl = exports.getPrCommitId = exports.getPullNumber = exports.getRepository = exports.getPackageJson = exports.getPackageJsonPath = exports.getProjectFilePath = void 0;
+exports.commentPr = exports.closePr = exports.getPrCommits = exports.getPrCommitsProps = exports.getCommentPrProps = exports.getClosePrAxiosProps = exports.getUpdatePrAxiosProps = exports.getHeaders = exports.getGithubToken = exports.getCommentPrUrl = exports.getPrCommitsUrl = exports.getUpdatePrUrl = exports.getPrCommitId = exports.getPullNumber = exports.getRepository = exports.getPackageJson = exports.getPackageJsonPath = exports.getProjectFilePath = void 0;
 const axios_1 = __importDefault(__nccwpck_require__(6545));
 const path_1 = __importDefault(__nccwpck_require__(5622));
 const github_1 = __nccwpck_require__(5438);
@@ -238,6 +237,10 @@ const getPrCommitsUrl = () => {
     return `https://api.github.com/repos/${(0, exports.getRepository)()}/pulls/${(0, exports.getPullNumber)()}/commits`;
 };
 exports.getPrCommitsUrl = getPrCommitsUrl;
+const getCommentPrUrl = () => {
+    return `https://api.github.com/repos/${(0, exports.getRepository)()}/issues/${(0, exports.getPullNumber)()}/comments`;
+};
+exports.getCommentPrUrl = getCommentPrUrl;
 const getGithubToken = () => {
     console.log('getGithubToken');
     return (0, core_1.getInput)('githubToken', {
@@ -268,9 +271,16 @@ const getClosePrAxiosProps = (title, body) => {
     return (0, exports.getUpdatePrAxiosProps)(title, body, 'close');
 };
 exports.getClosePrAxiosProps = getClosePrAxiosProps;
-const getCommentPrProps = (body, state) => {
+const getCommentPrProps = (body) => {
     console.log('getCommentPrProps body', body);
-    return (0, exports.getUpdatePrAxiosProps)('CHANGELOG tips', body, state);
+    return {
+        method: 'POST',
+        headers: (0, exports.getHeaders)(),
+        url: (0, exports.getCommentPrUrl)(),
+        data: {
+            body
+        }
+    };
 };
 exports.getCommentPrProps = getCommentPrProps;
 const getPrCommitsProps = () => {
@@ -286,8 +296,8 @@ const getPrCommits = () => __awaiter(void 0, void 0, void 0, function* () { retu
 exports.getPrCommits = getPrCommits;
 const closePr = (title, body) => __awaiter(void 0, void 0, void 0, function* () { return yield (0, axios_1.default)((0, exports.getClosePrAxiosProps)(title, body)); });
 exports.closePr = closePr;
-const commentPr = (body, state) => __awaiter(void 0, void 0, void 0, function* () {
-    const apiProps = (0, exports.getCommentPrProps)(body, state);
+const commentPr = (body) => __awaiter(void 0, void 0, void 0, function* () {
+    const apiProps = (0, exports.getCommentPrProps)(body);
     console.log('commentPr apiProps', apiProps);
     yield (0, axios_1.default)(apiProps);
 });

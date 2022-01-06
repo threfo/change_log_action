@@ -11,8 +11,7 @@ export const runAction = async (inputOptions: InputOptionsType) => {
   const list: any[] = data as any[]
   console.log('getPrCommits list', list)
 
-  const {state} = inputOptions || {}
   // 解析 格式化 list
   // 评论到当前 pr
-  await commentPr(getCommentBody(list.map(getCommitObj), inputOptions), state)
+  await commentPr(getCommentBody(list.map(getCommitObj), inputOptions))
 }
