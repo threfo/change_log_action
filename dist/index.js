@@ -25,7 +25,9 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             // 获取其他必要的参数
-            const inputOptions = {};
+            const inputOptions = {
+                issuesUrl: (0, core_1.getInput)('issuesUrl')
+            };
             (0, core_1.debug)(`options:${inputOptions}`);
             // 核心action代码
             yield (0, runner_1.runAction)(inputOptions);
@@ -81,10 +83,10 @@ exports.runAction = runAction;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getCommentBody = exports.getCommitObj = exports.message2Obj = exports.header2Obj = exports.tapd2Obj = exports.notGitMoJiTitle2Obj = exports.haveGitMoJiTitle2Obj = exports.fixColon = void 0;
+exports.getCommentBody = exports.commitItem2Changelog = exports.getIssueUrl = exports.commitListObj2CommentBodyObj = exports.getCommitObj = exports.message2Obj = exports.header2Obj = exports.tapd2Obj = exports.notGitMoJiTitle2Obj = exports.haveGitMoJiTitle2Obj = exports.fixColon = void 0;
 const gitMoJiStartExp = /^(?::\w*:|(?:\ud83c[\udf00-\udfff])|(?:\ud83d[\udc00-\ude4f\ude80-\udeff])|[\u2600-\u2B55])\s(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/;
 const notGitMoJiStartExp = /^(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/;
-const tapdExp = /^--(?<type>\w*)\W(?<ticket>\d*)(?:\s\S*)?\s(?:【(?<scope>.*)】)?(?<subject>(?:(?!h).)*(?:(?!\s).))\s?(?<url>http.*)?$/;
+const tapdExp = /^--(?<type>\w*)\W(?<ticket>\d*)(?:\s\S*)?\s(?:【(?<scope>.*)】)?(?<subject>(?:(?!h).)*(?:(?!\s).))\s?(?<issueUrl>http.*)?$/;
 const fixColon = (str) => {
     return str.replace(/：/g, ':');
 };
@@ -101,8 +103,8 @@ const notGitMoJiTitle2Obj = (str) => {
 exports.notGitMoJiTitle2Obj = notGitMoJiTitle2Obj;
 const tapd2Obj = (str) => {
     // --bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/23766501/s/1238756
-    const [, type, ticket, scope, subject] = tapdExp.exec(str) || [];
-    return { type, scope, subject, ticket };
+    const [, type, ticket, scope, subject, issueUrl] = tapdExp.exec(str) || [];
+    return { type, scope, subject, ticket, issueUrl };
 };
 exports.tapd2Obj = tapd2Obj;
 const header2Obj = (str) => {
@@ -122,7 +124,7 @@ const header2Obj = (str) => {
 exports.header2Obj = header2Obj;
 const message2Obj = (msg) => {
     const [header = '', body, footer] = msg.split('\n\n');
-    const { type, scope, subject, ticket } = (0, exports.header2Obj)(header);
+    const { type, scope, subject, ticket, issueUrl } = (0, exports.header2Obj)(header);
     return {
         header,
         body,
@@ -130,7 +132,8 @@ const message2Obj = (msg) => {
         type,
         scope,
         subject,
-        ticket
+        ticket,
+        issueUrl
     };
 };
 exports.message2Obj = message2Obj;
@@ -143,10 +146,86 @@ const getCommitObj = (item) => {
         message }, (0, exports.message2Obj)(message));
 };
 exports.getCommitObj = getCommitObj;
+const commitListObj2CommentBodyObj = (list) => {
+    const notTypeArr = [];
+    const scopeMap = {};
+    list.forEach(item => {
+        const { type, scope = '其他' } = item;
+        if (!type) {
+            notTypeArr.push(item);
+        }
+        else {
+            const scopeTypeMap = scopeMap[scope] || {};
+            const scopeTypeArr = scopeTypeMap[type] || [];
+            scopeTypeArr.push(item);
+            scopeTypeMap[type] = scopeTypeArr;
+            scopeMap[scope] = scopeTypeMap;
+        }
+    });
+    return {
+        notTypeArr,
+        scopeMap
+    };
+};
+exports.commitListObj2CommentBodyObj = commitListObj2CommentBodyObj;
+const getIssueUrl = (item, inputOptions) => {
+    const { issuesUrl = '' } = inputOptions || {};
+    const { type } = item;
+    let { issueUrl = '', ticket } = item;
+    if (ticket && !issueUrl && issuesUrl) {
+        ticket = ticket.replace('#', '');
+        const typeIssuesUrlMap = {
+            bug: '/bugtrace/bugs/view?bug_id=',
+            story: '/prong/stories/view/',
+            fix: '/bugtrace/bugs/view?bug_id=',
+            feat: '/prong/stories/view/'
+        };
+        const typeIssuesUrl = typeIssuesUrlMap[type] || '';
+        issueUrl = `${issuesUrl}${typeIssuesUrl || ''}${ticket}`;
+    }
+    if (issueUrl) {
+        issueUrl = ` | [${ticket || issueUrl}](${issueUrl})`;
+    }
+    return issueUrl;
+};
+exports.getIssueUrl = getIssueUrl;
+const commitItem2Changelog = (item, inputOptions) => {
+    const { subject, author, html_url } = item;
+    const { name, email, date } = author || {};
+    const title = [name, email, date].filter(i => i).join(' | ');
+    const issueUrl = (0, exports.getIssueUrl)(item, inputOptions);
+    let str = subject;
+    if (html_url) {
+        str = `<a href="${html_url}" title="${title}" target="_blank">${subject}</a>`;
+    }
+    if (str) {
+        return `- ${str}${issueUrl}`;
+    }
+    return '';
+};
+exports.commitItem2Changelog = commitItem2Changelog;
 const getCommentBody = (list, inputOptions) => {
     console.log('getCommentBody list', list);
     console.log('getCommentBody inputOptions', inputOptions);
-    return `getCommentBody: ${JSON.stringify(list)}， inputOptions： ${JSON.stringify(inputOptions)}`;
+    const { notTypeArr, scopeMap } = (0, exports.commitListObj2CommentBodyObj)(list);
+    const arr = ['# CHANGE LOG'];
+    Object.keys(scopeMap).forEach(scope => {
+        arr.push(`## ${scope}`);
+        const scopeTypeMap = scopeMap[scope];
+        Object.keys(scopeTypeMap).forEach(type => {
+            arr.push(`### ${type}`);
+            const scopeTypeArr = scopeTypeMap[type] || [];
+            scopeTypeArr.forEach(item => {
+                const changelogItem = (0, exports.commitItem2Changelog)(item, inputOptions);
+                if (changelogItem) {
+                    arr.push(changelogItem);
+                }
+            });
+        });
+    });
+    return `${arr.join('/n')}
+  /n/n
+  getCommentBody: ${JSON.stringify(list)}， inputOptions： ${JSON.stringify(inputOptions)}`;
 };
 exports.getCommentBody = getCommentBody;
 

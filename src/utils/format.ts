@@ -7,7 +7,7 @@ const notGitMoJiStartExp =
   /^(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/
 
 const tapdExp =
-  /^--(?<type>\w*)\W(?<ticket>\d*)(?:\s\S*)?\s(?:【(?<scope>.*)】)?(?<subject>(?:(?!h).)*(?:(?!\s).))\s?(?<url>http.*)?$/
+  /^--(?<type>\w*)\W(?<ticket>\d*)(?:\s\S*)?\s(?:【(?<scope>.*)】)?(?<subject>(?:(?!h).)*(?:(?!\s).))\s?(?<issueUrl>http.*)?$/
 
 export const fixColon = (str: string) => {
   return str.replace(/：/g, ':')
@@ -27,9 +27,9 @@ export const notGitMoJiTitle2Obj = (str: string) => {
 
 export const tapd2Obj = (str: string) => {
   // --bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/23766501/s/1238756
-  const [, type, ticket, scope, subject] = tapdExp.exec(str) || []
+  const [, type, ticket, scope, subject, issueUrl] = tapdExp.exec(str) || []
 
-  return {type, scope, subject, ticket}
+  return {type, scope, subject, ticket, issueUrl}
 }
 
 export const header2Obj = (str: string) => {
@@ -54,7 +54,7 @@ export const header2Obj = (str: string) => {
 export const message2Obj = (msg: string) => {
   const [header = '', body, footer] = msg.split('\n\n')
 
-  const {type, scope, subject, ticket} = header2Obj(header)
+  const {type, scope, subject, ticket, issueUrl} = header2Obj(header)
 
   return {
     header,
@@ -63,7 +63,8 @@ export const message2Obj = (msg: string) => {
     type,
     scope,
     subject,
-    ticket
+    ticket,
+    issueUrl
   }
 }
 
@@ -81,10 +82,105 @@ export const getCommitObj = (item: any) => {
   }
 }
 
+export const commitListObj2CommentBodyObj = (list: any[]) => {
+  const notTypeArr: any[] = []
+  const scopeMap: any = {}
+
+  list.forEach(item => {
+    const {type, scope = '其他'} = item
+    if (!type) {
+      notTypeArr.push(item)
+    } else {
+      const scopeTypeMap = scopeMap[scope] || {}
+      const scopeTypeArr = scopeTypeMap[type] || []
+      scopeTypeArr.push(item)
+
+      scopeTypeMap[type] = scopeTypeArr
+      scopeMap[scope] = scopeTypeMap
+    }
+  })
+  return {
+    notTypeArr,
+    scopeMap
+  }
+}
+
+export const getIssueUrl = (item: any, inputOptions: InputOptionsType) => {
+  const {issuesUrl = ''} = inputOptions || {}
+  const {type} = item
+  let {issueUrl = '', ticket} = item
+  if (ticket && !issueUrl && issuesUrl) {
+    ticket = ticket.replace('#', '')
+
+    const typeIssuesUrlMap: any = {
+      bug: '/bugtrace/bugs/view?bug_id=',
+      story: '/prong/stories/view/',
+      fix: '/bugtrace/bugs/view?bug_id=',
+      feat: '/prong/stories/view/'
+    }
+    const typeIssuesUrl = typeIssuesUrlMap[type] || ''
+
+    issueUrl = `${issuesUrl}${typeIssuesUrl || ''}${ticket}`
+  }
+
+  if (issueUrl) {
+    issueUrl = ` | [${ticket || issueUrl}](${issueUrl})`
+  }
+
+  return issueUrl
+}
+
+export const commitItem2Changelog = (
+  item: any,
+  inputOptions: InputOptionsType
+) => {
+  const {subject, author, html_url} = item
+  const {name, email, date} = author || {}
+
+  const title = [name, email, date].filter(i => i).join(' | ')
+  const issueUrl = getIssueUrl(item, inputOptions)
+
+  let str = subject
+  if (html_url) {
+    str = `<a href="${html_url}" title="${title}" target="_blank">${subject}</a>`
+  }
+
+  if (str) {
+    return `- ${str}${issueUrl}`
+  }
+  return ''
+}
+
 export const getCommentBody = (list: any[], inputOptions: InputOptionsType) => {
   console.log('getCommentBody list', list)
   console.log('getCommentBody inputOptions', inputOptions)
-  return `getCommentBody: ${JSON.stringify(
-    list
-  )}， inputOptions： ${JSON.stringify(inputOptions)}`
+
+  const {notTypeArr, scopeMap} = commitListObj2CommentBodyObj(list)
+
+  const arr = ['# CHANGE LOG']
+
+  Object.keys(scopeMap).forEach(scope => {
+    arr.push(`## ${scope}`)
+
+    const scopeTypeMap = scopeMap[scope]
+
+    Object.keys(scopeTypeMap).forEach(type => {
+      arr.push(`### ${type}`)
+
+      const scopeTypeArr: any[] = scopeTypeMap[type] || []
+
+      scopeTypeArr.forEach(item => {
+        const changelogItem = commitItem2Changelog(item, inputOptions)
+        if (changelogItem) {
+          arr.push(changelogItem)
+        }
+      })
+    })
+  })
+
+  return `${arr.join('/n')}
+  /n/n
+  getCommentBody: ${JSON.stringify(list)}， inputOptions： ${JSON.stringify(
+    inputOptions
+  )}`
 }

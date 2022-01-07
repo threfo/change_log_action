@@ -6,7 +6,10 @@ import {
   notGitMoJiTitle2Obj,
   fixColon,
   header2Obj,
-  tapd2Obj
+  tapd2Obj,
+  commitListObj2CommentBodyObj,
+  getIssueUrl,
+  commitItem2Changelog
 } from '../format'
 
 const mockData = [
@@ -296,7 +299,8 @@ test('src/utils/format.ts tapd2Obj', () => {
       type: 'bug',
       scope: '面试官工作台',
       subject: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
-      ticket: '1010381'
+      ticket: '1010381',
+      issueUrl: 'https://www.tapd.cn/23766501/s/1238756'
     })
   )
   expect(
@@ -310,7 +314,8 @@ test('src/utils/format.ts tapd2Obj', () => {
       type: 'bug',
       scope: undefined,
       subject: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
-      ticket: '1010381'
+      ticket: '1010381',
+      issueUrl: 'https://www.tapd.cn/23766501/s/1238756'
     })
   )
 
@@ -384,7 +389,8 @@ test('src/utils/format.ts header2Obj', () => {
       type: 'bug',
       scope: '面试官工作台',
       subject: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
-      ticket: '1010381'
+      ticket: '1010381',
+      issueUrl: 'https://www.tapd.cn/23766501/s/1238756'
     })
   )
 })
@@ -441,7 +447,8 @@ test('src/utils/format.ts message2Obj', () => {
       type: 'bug',
       scope: '面试官工作台',
       subject: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
-      ticket: '1010381'
+      ticket: '1010381',
+      issueUrl: 'https://www.tapd.cn/23766501/s/1238756'
     })
   )
 
@@ -528,5 +535,151 @@ test('src/utils/format.ts getCommitObj', () => {
       subject: '测试一下完成的',
       ticket: undefined
     })
+  )
+})
+
+test('src/utils/format.ts commitListObj2CommentBodyObj', () => {
+  const test1 = {
+    header: 'header1',
+    body: 'body1',
+    footer: 'footer1',
+    type: 'type1',
+    scope: 'scope1',
+    subject: 'subject1',
+    ticket: 'ticket1'
+  }
+  const test2 = {
+    header: 'header2',
+    body: 'body2',
+    footer: 'footer2',
+    type: 'type2',
+    scope: 'scope2',
+    subject: 'subject2',
+    ticket: 'ticket2'
+  }
+  const test3 = {
+    header: 'header3',
+    body: 'body3',
+    footer: 'footer3',
+    type: 'type2',
+    scope: 'scope2',
+    subject: 'subject2',
+    ticket: 'ticket2'
+  }
+  const test4 = {
+    header: 'header4',
+    body: 'body4',
+    footer: 'footer4',
+    type: 'type1',
+    scope: 'scope2',
+    subject: 'subject4',
+    ticket: 'ticket4'
+  }
+
+  const test5 = {
+    header: 'header5',
+    body: 'body5',
+    footer: 'footer5',
+    scope: 'scope2',
+    subject: 'subject5',
+    ticket: 'ticket5'
+  }
+
+  expect(
+    JSON.stringify(
+      commitListObj2CommentBodyObj([test1, test2, test3, test4, test5])
+    )
+  ).toBe(
+    JSON.stringify({
+      notTypeArr: [test5],
+      scopeMap: {
+        scope1: {
+          type1: [test1]
+        },
+        scope2: {
+          type2: [test2, test3],
+          type1: [test4]
+        }
+      }
+    })
+  )
+})
+
+test('src/utils/format.ts getIssueUrl', () => {
+  expect(getIssueUrl({}, {})).toBe('')
+  expect(getIssueUrl({ticket: 'ticket', issueUrl: 'issueUrl'}, {})).toBe(
+    ' | [ticket](issueUrl)'
+  )
+  expect(getIssueUrl({issueUrl: 'issueUrl'}, {})).toBe(
+    ' | [issueUrl](issueUrl)'
+  )
+  expect(getIssueUrl({ticket: 'ticket'}, {})).toBe('')
+  expect(getIssueUrl({ticket: 'ticket'}, {issuesUrl: 'issuesUrl'})).toBe(
+    ' | [ticket](issuesUrlticket)'
+  )
+
+  expect(getIssueUrl({ticket: 'ticket'}, {issuesUrl: 'issuesUrl'})).toBe(
+    ' | [ticket](issuesUrlticket)'
+  )
+
+  expect(
+    getIssueUrl({ticket: '#1', type: 'bug'}, {issuesUrl: 'issuesUrl'})
+  ).toBe(' | [1](issuesUrl/bugtrace/bugs/view?bug_id=1)')
+
+  expect(
+    getIssueUrl({ticket: '#1', type: 'fix'}, {issuesUrl: 'issuesUrl'})
+  ).toBe(' | [1](issuesUrl/bugtrace/bugs/view?bug_id=1)')
+
+  expect(
+    getIssueUrl({ticket: '#1', type: 'story'}, {issuesUrl: 'issuesUrl'})
+  ).toBe(' | [1](issuesUrl/prong/stories/view/1)')
+
+  expect(
+    getIssueUrl({ticket: '#1', type: 'feat'}, {issuesUrl: 'issuesUrl'})
+  ).toBe(' | [1](issuesUrl/prong/stories/view/1)')
+})
+
+test('src/utils/format.ts commitItem2Changelog', () => {
+  expect(commitItem2Changelog({}, {})).toBe('')
+
+  expect(commitItem2Changelog({subject: 'subject'}, {})).toBe('- subject')
+
+  expect(
+    commitItem2Changelog({subject: 'subject', html_url: 'html_url'}, {})
+  ).toBe('- <a href="html_url" title="" target="_blank">subject</a>')
+
+  expect(
+    commitItem2Changelog(
+      {
+        subject: 'subject',
+        html_url: 'html_url',
+        author: {
+          name: 'name',
+          email: 'email',
+          date: 'date'
+        }
+      },
+      {}
+    )
+  ).toBe(
+    '- <a href="html_url" title="name | email | date" target="_blank">subject</a>'
+  )
+
+  expect(
+    commitItem2Changelog(
+      {
+        subject: 'subject',
+        html_url: 'html_url',
+        author: {
+          name: 'name',
+          email: 'email',
+          date: 'date'
+        },
+        issueUrl: 'issueUrl'
+      },
+      {}
+    )
+  ).toBe(
+    '- <a href="html_url" title="name | email | date" target="_blank">subject</a> | [issueUrl](issueUrl)'
   )
 })
