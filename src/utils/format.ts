@@ -1,4 +1,5 @@
 import {InputOptionsType} from '../type'
+import moment from 'moment'
 
 const gitMoJiStartExp =
   /^(?::\w*:|(?:\ud83c[\udf00-\udfff])|(?:\ud83d[\udc00-\ude4f\ude80-\udeff])|[\u2600-\u2B55])\s(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/
@@ -126,53 +127,100 @@ export const getIssueUrl = (item: any, inputOptions: InputOptionsType) => {
     issueUrl = `${issuesUrl}${typeIssuesUrl || ''}${ticket}`
   }
 
+  return issueUrl
+}
+
+export const getIssueUrlMd = (item: any, inputOptions: InputOptionsType) => {
+  let issueUrl = getIssueUrl(item, inputOptions)
+  let {ticket} = item
   if (issueUrl) {
-    issueUrl = ` | [${ticket || issueUrl}](${issueUrl})`
+    issueUrl = `<a href="${issueUrl}" target="_blank">issue ${
+      ticket || 'url'
+    }</a>`
   }
 
   return issueUrl
 }
 
-export const getBodyAndFooter = (item: any) => {
+export const getPreStr = (item: any, inputOptions: InputOptionsType) => {
   const {body, footer} = item
 
   let strArr = []
+
+  const preHeaderStr = getPreHeader(item, inputOptions)
+  if (preHeaderStr) {
+    strArr.push(preHeaderStr)
+  }
+
   if (body) {
     strArr.push(body)
   }
 
   if (footer) {
-    strArr.push(`> ⚠️**重点注意**\n> ${footer}`)
+    strArr.push(`⚠️**重点注意**\n ${footer}`)
   }
 
-  let bodyStr = strArr.join('\n\n')
-  if (bodyStr) {
-    bodyStr = ` | <details><summary>更多</summary><pre>${bodyStr}</pre></<details>`
+  let preStr = strArr.join('\n\n')
+  if (preStr) {
+    preStr = `<pre>${preStr}</pre>`
   }
 
-  return bodyStr
+  return preStr
+}
+
+export const getCodeMd = (item: any) => {
+  const {author, html_url} = item
+  const {name, email} = author || {}
+  let str = ''
+  if (html_url) {
+    const title = [name, email].filter(i => i).join(' | ')
+    str = `<a href="${html_url}" title="${title}" target="_blank">详细代码</a>`
+  }
+  return str
+}
+
+export const getDateMd = (item: any) => {
+  const {author} = item
+  const {date} = author || {}
+
+  let dateStr = date
+  if (moment.isDate(date)) {
+    dateStr = moment(date).format('YYYY/MM/DD HH:mm')
+  } else {
+    dateStr = ''
+  }
+
+  return dateStr
+}
+
+export const getPreHeader = (item: any, inputOptions: InputOptionsType) => {
+  return [getDateMd(item), getCodeMd(item), getIssueUrlMd(item, inputOptions)]
+    .filter(i => i)
+    .join(' | ')
 }
 
 export const commitItem2Changelog = (
   item: any,
   inputOptions: InputOptionsType
 ) => {
-  const {subject, author, html_url} = item
-  const {name, email, date} = author || {}
+  const {subject} = item
+  const preStr = getPreStr(item, inputOptions)
+  let str = subject || ''
 
-  const title = [name, email, date].filter(i => i).join(' | ')
-  const issueUrl = getIssueUrl(item, inputOptions)
-  const bodyStr = getBodyAndFooter(item)
-
-  let str = subject
-  if (html_url) {
-    str = `<a href="${html_url}" title="${title}" target="_blank">${subject}</a>`
+  if (preStr && str) {
+    str = [
+      '<details>',
+      `<summary>${subject}</summary>`,
+      preStr,
+      '</details>'
+    ].join('\n')
   }
 
-  if (str) {
-    return `- ${str}${issueUrl}${bodyStr}`
-  }
-  return ''
+  return str
+}
+
+export const getNotTypeTips = (notTypeArr: any[]) => {
+  let str = ''
 }
 
 export const getCommentBody = (list: any[], inputOptions: InputOptionsType) => {

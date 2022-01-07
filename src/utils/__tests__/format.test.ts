@@ -9,8 +9,8 @@ import {
   tapd2Obj,
   commitListObj2CommentBodyObj,
   getIssueUrl,
-  commitItem2Changelog,
-  getBodyAndFooter
+  getIssueUrlMd,
+  commitItem2Changelog
 } from '../format'
 
 const mockData = [
@@ -604,112 +604,53 @@ test('src/utils/format.ts commitListObj2CommentBodyObj', () => {
   )
 })
 
+getIssueUrl
 test('src/utils/format.ts getIssueUrl', () => {
   expect(getIssueUrl({}, {})).toBe('')
   expect(getIssueUrl({ticket: 'ticket', issueUrl: 'issueUrl'}, {})).toBe(
-    ' | [ticket](issueUrl)'
+    'issueUrl'
   )
-  expect(getIssueUrl({issueUrl: 'issueUrl'}, {})).toBe(
-    ' | [issueUrl](issueUrl)'
-  )
+  expect(getIssueUrl({issueUrl: 'issueUrl'}, {})).toBe('issueUrl')
   expect(getIssueUrl({ticket: 'ticket'}, {})).toBe('')
   expect(getIssueUrl({ticket: 'ticket'}, {issuesUrl: 'issuesUrl'})).toBe(
-    ' | [ticket](issuesUrlticket)'
-  )
-
-  expect(getIssueUrl({ticket: 'ticket'}, {issuesUrl: 'issuesUrl'})).toBe(
-    ' | [ticket](issuesUrlticket)'
+    'issuesUrlticket'
   )
 
   expect(
     getIssueUrl({ticket: '#1', type: 'bug'}, {issuesUrl: 'issuesUrl'})
-  ).toBe(' | [1](issuesUrl/bugtrace/bugs/view?bug_id=1)')
+  ).toBe('issuesUrl/bugtrace/bugs/view?bug_id=1')
 
   expect(
     getIssueUrl({ticket: '#1', type: 'fix'}, {issuesUrl: 'issuesUrl'})
-  ).toBe(' | [1](issuesUrl/bugtrace/bugs/view?bug_id=1)')
+  ).toBe('issuesUrl/bugtrace/bugs/view?bug_id=1')
 
   expect(
     getIssueUrl({ticket: '#1', type: 'story'}, {issuesUrl: 'issuesUrl'})
-  ).toBe(' | [1](issuesUrl/prong/stories/view/1)')
+  ).toBe('issuesUrl/prong/stories/view/1')
 
   expect(
     getIssueUrl({ticket: '#1', type: 'feat'}, {issuesUrl: 'issuesUrl'})
-  ).toBe(' | [1](issuesUrl/prong/stories/view/1)')
+  ).toBe('issuesUrl/prong/stories/view/1')
+})
+
+test('src/utils/format.ts getIssueUrlMd', () => {
+  expect(getIssueUrlMd({}, {})).toBe('')
+  expect(getIssueUrlMd({ticket: 'ticket', issueUrl: 'issueUrl'}, {})).toBe(
+    '<a href="issueUrl" target="_blank">issue ticket</a>'
+  )
+  expect(getIssueUrlMd({issueUrl: 'issueUrl'}, {})).toBe(
+    '<a href="issueUrl" target="_blank">issue url</a>'
+  )
 })
 
 test('src/utils/format.ts commitItem2Changelog', () => {
   expect(commitItem2Changelog({}, {})).toBe('')
 
-  expect(commitItem2Changelog({subject: 'subject'}, {})).toBe('- subject')
+  expect(commitItem2Changelog({subject: 'subject'}, {})).toBe('subject')
 
   expect(
     commitItem2Changelog({subject: 'subject', html_url: 'html_url'}, {})
-  ).toBe('- <a href="html_url" title="" target="_blank">subject</a>')
-
-  expect(
-    commitItem2Changelog(
-      {
-        subject: 'subject',
-        html_url: 'html_url',
-        author: {
-          name: 'name',
-          email: 'email',
-          date: 'date'
-        }
-      },
-      {}
-    )
   ).toBe(
-    '- <a href="html_url" title="name | email | date" target="_blank">subject</a>'
-  )
-
-  expect(
-    commitItem2Changelog(
-      {
-        subject: 'subject',
-        html_url: 'html_url',
-        author: {
-          name: 'name',
-          email: 'email',
-          date: 'date'
-        },
-        issueUrl: 'issueUrl'
-      },
-      {}
-    )
-  ).toBe(
-    '- <a href="html_url" title="name | email | date" target="_blank">subject</a> | [issueUrl](issueUrl)'
-  )
-
-  expect(
-    commitItem2Changelog(
-      {
-        subject: 'subject',
-        html_url: 'html_url',
-        author: {
-          name: 'name',
-          email: 'email',
-          date: 'date'
-        },
-        issueUrl: 'issueUrl',
-        body: 'body',
-        footer: 'footer'
-      },
-      {}
-    )
-  ).toBe(
-    '- <a href="html_url" title="name | email | date" target="_blank">subject</a> | [issueUrl](issueUrl) | <details><summary>更多</summary><pre>body\n\n> ⚠️**重点注意**\n> footer</pre></<details>'
-  )
-})
-
-test('src/utils/format.ts getBodyAndFooter', () => {
-  expect(getBodyAndFooter({})).toBe('')
-  expect(getBodyAndFooter({body: 'body'})).toBe(
-    ' | <details><summary>更多</summary><pre>body</pre></<details>'
-  )
-
-  expect(getBodyAndFooter({body: 'body', footer: 'footer'})).toBe(
-    ' | <details><summary>更多</summary><pre>body\n\n> ⚠️**重点注意**\n> footer</pre></<details>'
+    '<details>\n<summary>subject</summary>\n<pre><a href="html_url" title="" target="_blank">详细代码</a></pre>\n</details>'
   )
 })
