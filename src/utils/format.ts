@@ -82,15 +82,11 @@ export const getCommitObj = (item: any) => {
   }
 }
 
-export const commitListObj2CommentBodyObj = (list: any[]) => {
-  const notTypeArr: any[] = []
+const getScopeMap = (list: any[]) => {
   const scopeMap: any = {}
-
   list.forEach(item => {
     const {type, scope = '其他'} = item
-    if (!type) {
-      notTypeArr.push(item)
-    } else {
+    if (type) {
       const scopeTypeMap = scopeMap[scope] || {}
       const scopeTypeArr = scopeTypeMap[type] || []
       scopeTypeArr.push(item)
@@ -99,6 +95,13 @@ export const commitListObj2CommentBodyObj = (list: any[]) => {
       scopeMap[scope] = scopeTypeMap
     }
   })
+  return scopeMap
+}
+
+export const commitListObj2CommentBodyObj = (list: any[]) => {
+  const notTypeArr: any[] = list.filter(({type}) => !type)
+  const scopeMap: any = getScopeMap(list.filter(({type}) => type))
+
   return {
     notTypeArr,
     scopeMap
@@ -130,6 +133,26 @@ export const getIssueUrl = (item: any, inputOptions: InputOptionsType) => {
   return issueUrl
 }
 
+export const getBodyAndFooter = (item: any) => {
+  const {body, footer} = item
+
+  let strArr = []
+  if (body) {
+    strArr.push(body)
+  }
+
+  if (footer) {
+    strArr.push(`> ⚠️**重点注意**\n> ${footer}`)
+  }
+
+  let bodyStr = strArr.join('\n\n')
+  if (bodyStr) {
+    bodyStr = ` | <details><summary>更多</summary><pre>${bodyStr}</pre></<details>`
+  }
+
+  return bodyStr
+}
+
 export const commitItem2Changelog = (
   item: any,
   inputOptions: InputOptionsType
@@ -139,6 +162,7 @@ export const commitItem2Changelog = (
 
   const title = [name, email, date].filter(i => i).join(' | ')
   const issueUrl = getIssueUrl(item, inputOptions)
+  const bodyStr = getBodyAndFooter(item)
 
   let str = subject
   if (html_url) {
@@ -146,7 +170,7 @@ export const commitItem2Changelog = (
   }
 
   if (str) {
-    return `- ${str}${issueUrl}`
+    return `- ${str}${issueUrl}${bodyStr}`
   }
   return ''
 }
@@ -176,7 +200,5 @@ export const getCommentBody = (list: any[], inputOptions: InputOptionsType) => {
 
   return `${arr.join('\n\n')}
   \n\n
-  getCommentBody: ${JSON.stringify(list)}， inputOptions： ${JSON.stringify(
-    inputOptions
-  )}`
+  `
 }

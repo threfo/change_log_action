@@ -83,7 +83,7 @@ exports.runAction = runAction;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getCommentBody = exports.commitItem2Changelog = exports.getIssueUrl = exports.commitListObj2CommentBodyObj = exports.getCommitObj = exports.message2Obj = exports.header2Obj = exports.tapd2Obj = exports.notGitMoJiTitle2Obj = exports.haveGitMoJiTitle2Obj = exports.fixColon = void 0;
+exports.getCommentBody = exports.commitItem2Changelog = exports.getBodyAndFooter = exports.getIssueUrl = exports.commitListObj2CommentBodyObj = exports.getCommitObj = exports.message2Obj = exports.header2Obj = exports.tapd2Obj = exports.notGitMoJiTitle2Obj = exports.haveGitMoJiTitle2Obj = exports.fixColon = void 0;
 const gitMoJiStartExp = /^(?::\w*:|(?:\ud83c[\udf00-\udfff])|(?:\ud83d[\udc00-\ude4f\ude80-\udeff])|[\u2600-\u2B55])\s(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/;
 const notGitMoJiStartExp = /^(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/;
 const tapdExp = /^--(?<type>\w*)\W(?<ticket>\d*)(?:\s\S*)?\s(?:【(?<scope>.*)】)?(?<subject>(?:(?!h).)*(?:(?!\s).))\s?(?<issueUrl>http.*)?$/;
@@ -146,15 +146,11 @@ const getCommitObj = (item) => {
         message }, (0, exports.message2Obj)(message));
 };
 exports.getCommitObj = getCommitObj;
-const commitListObj2CommentBodyObj = (list) => {
-    const notTypeArr = [];
+const getScopeMap = (list) => {
     const scopeMap = {};
     list.forEach(item => {
         const { type, scope = '其他' } = item;
-        if (!type) {
-            notTypeArr.push(item);
-        }
-        else {
+        if (type) {
             const scopeTypeMap = scopeMap[scope] || {};
             const scopeTypeArr = scopeTypeMap[type] || [];
             scopeTypeArr.push(item);
@@ -162,6 +158,11 @@ const commitListObj2CommentBodyObj = (list) => {
             scopeMap[scope] = scopeTypeMap;
         }
     });
+    return scopeMap;
+};
+const commitListObj2CommentBodyObj = (list) => {
+    const notTypeArr = list.filter(({ type }) => !type);
+    const scopeMap = getScopeMap(list.filter(({ type }) => type));
     return {
         notTypeArr,
         scopeMap
@@ -189,17 +190,34 @@ const getIssueUrl = (item, inputOptions) => {
     return issueUrl;
 };
 exports.getIssueUrl = getIssueUrl;
+const getBodyAndFooter = (item) => {
+    const { body, footer } = item;
+    let strArr = [];
+    if (body) {
+        strArr.push(body);
+    }
+    if (footer) {
+        strArr.push(`> ⚠️**重点注意**\n> ${footer}`);
+    }
+    let bodyStr = strArr.join('\n\n');
+    if (bodyStr) {
+        bodyStr = ` | <details><summary>更多</summary><pre>${bodyStr}</pre></<details>`;
+    }
+    return bodyStr;
+};
+exports.getBodyAndFooter = getBodyAndFooter;
 const commitItem2Changelog = (item, inputOptions) => {
     const { subject, author, html_url } = item;
     const { name, email, date } = author || {};
     const title = [name, email, date].filter(i => i).join(' | ');
     const issueUrl = (0, exports.getIssueUrl)(item, inputOptions);
+    const bodyStr = (0, exports.getBodyAndFooter)(item);
     let str = subject;
     if (html_url) {
         str = `<a href="${html_url}" title="${title}" target="_blank">${subject}</a>`;
     }
     if (str) {
-        return `- ${str}${issueUrl}`;
+        return `- ${str}${issueUrl}${bodyStr}`;
     }
     return '';
 };
@@ -220,7 +238,7 @@ const getCommentBody = (list, inputOptions) => {
     });
     return `${arr.join('\n\n')}
   \n\n
-  getCommentBody: ${JSON.stringify(list)}， inputOptions： ${JSON.stringify(inputOptions)}`;
+  `;
 };
 exports.getCommentBody = getCommentBody;
 

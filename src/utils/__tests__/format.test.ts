@@ -9,7 +9,8 @@ import {
   tapd2Obj,
   commitListObj2CommentBodyObj,
   getIssueUrl,
-  commitItem2Changelog
+  commitItem2Changelog,
+  getBodyAndFooter
 } from '../format'
 
 const mockData = [
@@ -551,7 +552,6 @@ test('src/utils/format.ts commitListObj2CommentBodyObj', () => {
   const test2 = {
     header: 'header2',
     body: 'body2',
-    footer: 'footer2',
     type: 'type2',
     scope: 'scope2',
     subject: 'subject2',
@@ -569,7 +569,6 @@ test('src/utils/format.ts commitListObj2CommentBodyObj', () => {
   const test4 = {
     header: 'header4',
     body: 'body4',
-    footer: 'footer4',
     type: 'type1',
     scope: 'scope2',
     subject: 'subject4',
@@ -681,5 +680,36 @@ test('src/utils/format.ts commitItem2Changelog', () => {
     )
   ).toBe(
     '- <a href="html_url" title="name | email | date" target="_blank">subject</a> | [issueUrl](issueUrl)'
+  )
+
+  expect(
+    commitItem2Changelog(
+      {
+        subject: 'subject',
+        html_url: 'html_url',
+        author: {
+          name: 'name',
+          email: 'email',
+          date: 'date'
+        },
+        issueUrl: 'issueUrl',
+        body: 'body',
+        footer: 'footer'
+      },
+      {}
+    )
+  ).toBe(
+    '- <a href="html_url" title="name | email | date" target="_blank">subject</a> | [issueUrl](issueUrl) | <details><summary>更多</summary><pre>body\n\n> ⚠️**重点注意**\n> footer</pre></<details>'
+  )
+})
+
+test('src/utils/format.ts getBodyAndFooter', () => {
+  expect(getBodyAndFooter({})).toBe('')
+  expect(getBodyAndFooter({body: 'body'})).toBe(
+    ' | <details><summary>更多</summary><pre>body</pre></<details>'
+  )
+
+  expect(getBodyAndFooter({body: 'body', footer: 'footer'})).toBe(
+    ' | <details><summary>更多</summary><pre>body\n\n> ⚠️**重点注意**\n> footer</pre></<details>'
   )
 })
