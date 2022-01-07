@@ -10,7 +10,8 @@ import {
   commitListObj2CommentBodyObj,
   getIssueUrl,
   getIssueUrlMd,
-  commitItem2Changelog
+  commitItem2Changelog,
+  getDateMd
 } from '../format'
 
 const mockData = [
@@ -652,5 +653,13 @@ test('src/utils/format.ts commitItem2Changelog', () => {
     commitItem2Changelog({subject: 'subject', html_url: 'html_url'}, {})
   ).toBe(
     '<details>\n<summary>subject</summary>\n<pre><a href="html_url" title="" target="_blank">详细代码</a></pre>\n</details>'
+  )
+})
+
+test('src/utils/format.ts getDateMd', () => {
+  expect(getDateMd({author: {date: 'date'}})).toBe('')
+
+  expect(getDateMd({author: {date: '2022-01-05T06:14:15Z'}})).toBe(
+    '2022/01/05 14:14'
   )
 })

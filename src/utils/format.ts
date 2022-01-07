@@ -157,10 +157,10 @@ export const getPreStr = (item: any, inputOptions: InputOptionsType) => {
   }
 
   if (footer) {
-    strArr.push(`⚠️**重点注意**\n ${footer}`)
+    strArr.push(`⚠️**重点注意**<br /> ${footer}`)
   }
 
-  let preStr = strArr.join('\n\n')
+  let preStr = strArr.join('<br /><br />')
   if (preStr) {
     preStr = `<pre>${preStr}</pre>`
   }
@@ -184,7 +184,7 @@ export const getDateMd = (item: any) => {
   const {date} = author || {}
 
   let dateStr = date
-  if (moment.isDate(date)) {
+  if (dateStr && moment(date).isValid()) {
     dateStr = moment(date).format('YYYY/MM/DD HH:mm')
   } else {
     dateStr = ''

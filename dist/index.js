@@ -211,9 +211,9 @@ const getPreStr = (item, inputOptions) => {
         strArr.push(body);
     }
     if (footer) {
-        strArr.push(`⚠️**重点注意**\n ${footer}`);
+        strArr.push(`⚠️**重点注意**<br /> ${footer}`);
     }
-    let preStr = strArr.join('\n\n');
+    let preStr = strArr.join('<br /><br />');
     if (preStr) {
         preStr = `<pre>${preStr}</pre>`;
     }
@@ -235,7 +235,7 @@ const getDateMd = (item) => {
     const { author } = item;
     const { date } = author || {};
     let dateStr = date;
-    if (moment_1.default.isDate(date)) {
+    if (dateStr && (0, moment_1.default)(date).isValid()) {
         dateStr = (0, moment_1.default)(date).format('YYYY/MM/DD HH:mm');
     }
     else {
