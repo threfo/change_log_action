@@ -167,19 +167,15 @@ export const getCommentBody = (list: any[], inputOptions: InputOptionsType) => {
     Object.keys(scopeTypeMap).forEach(type => {
       arr.push(`### ${type}`)
 
-      const scopeTypeArr: any[] = scopeTypeMap[type] || []
-
-      scopeTypeArr.forEach(item => {
-        const changelogItem = commitItem2Changelog(item, inputOptions)
-        if (changelogItem) {
-          arr.push(changelogItem)
-        }
-      })
+      const scopeTypeArr: string[] = (scopeTypeMap[type] || []).map(
+        (item: any) => commitItem2Changelog(item, inputOptions)
+      )
+      arr.push(scopeTypeArr.join('\n'))
     })
   })
 
-  return `${arr.join('/n')}
-  /n/n
+  return `${arr.join('\n\n')}
+  \n\n
   getCommentBody: ${JSON.stringify(list)}， inputOptions： ${JSON.stringify(
     inputOptions
   )}`
