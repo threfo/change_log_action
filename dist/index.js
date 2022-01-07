@@ -214,17 +214,12 @@ const getCommentBody = (list, inputOptions) => {
         const scopeTypeMap = scopeMap[scope];
         Object.keys(scopeTypeMap).forEach(type => {
             arr.push(`### ${type}`);
-            const scopeTypeArr = scopeTypeMap[type] || [];
-            scopeTypeArr.forEach(item => {
-                const changelogItem = (0, exports.commitItem2Changelog)(item, inputOptions);
-                if (changelogItem) {
-                    arr.push(changelogItem);
-                }
-            });
+            const scopeTypeArr = (scopeTypeMap[type] || []).map((item) => (0, exports.commitItem2Changelog)(item, inputOptions));
+            arr.push(scopeTypeArr.join('\n'));
         });
     });
-    return `${arr.join('/n')}
-  /n/n
+    return `${arr.join('\n\n')}
+  \n\n
   getCommentBody: ${JSON.stringify(list)}， inputOptions： ${JSON.stringify(inputOptions)}`;
 };
 exports.getCommentBody = getCommentBody;
