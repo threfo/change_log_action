@@ -10,9 +10,7 @@ async function run(): Promise<void> {
   try {
     // 获取其他必要的参数
     const inputOptions = {
-      // eslintFiles: parseInputArray(eslintFiles),
-      // eslintConfig,
-      // eslintExtensions: parseInputArray(eslintExtensions)
+      issuesUrl: getInput('issuesUrl')
     }
     debug(`options:${inputOptions}`)
 

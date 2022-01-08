@@ -5,12 +5,13 @@ import {
   getRepository,
   getPullNumber,
   getPrCommitId,
-  getPrCommits,
+  getPrCommitsProps,
   getUpdatePrUrl,
-  getCommentsPrUrl,
+  getPrCommitsUrl,
   getGithubToken,
   getClosePrAxiosProps,
-  getCommentPrProps
+  getCommentPrProps,
+  getCommentPrUrl
 } from '../index'
 
 jest.mock('@actions/github', () => ({
@@ -60,22 +61,38 @@ test('src/utils/index.ts getPrCommitId', () => {
   expect(getPrCommitId()).toBe('after')
 })
 
-test('src/utils/index.ts getPrCommits', () => {
-  expect(getPrCommits()).toBe('commits')
+test('src/utils/index.ts getPrCommitsUrl', () => {
+  expect(getPrCommitsUrl()).toBe(
+    'https://api.github.com/repos/a/b/pulls/number/commits'
+  )
 })
 
 test('src/utils/index.ts getUpdatePrUrl', () => {
   expect(getUpdatePrUrl()).toBe('https://api.github.com/repos/a/b/pulls/number')
 })
 
-test('src/utils/index.ts getCommentsPrUrl', () => {
-  expect(getCommentsPrUrl()).toBe(
-    'https://api.github.com/repos/a/b/pulls/number/comments'
+test('src/utils/index.ts getCommentPrUrl', () => {
+  expect(getCommentPrUrl()).toBe(
+    'https://api.github.com/repos/a/b/issues/number/comments'
   )
 })
 
 test('src/utils/index.ts getGithubToken', () => {
   expect(getGithubToken()).toBe('githubToken')
+})
+
+test('src/utils/index.ts getPrCommitsProps', () => {
+  expect(JSON.stringify(getPrCommitsProps())).toBe(
+    JSON.stringify({
+      method: 'GET',
+      headers: {
+        Accept: 'application/vnd.github.v3+json',
+        'content-type': 'application/json',
+        Authorization: `Bearer githubToken`
+      },
+      url: 'https://api.github.com/repos/a/b/pulls/number/commits'
+    })
+  )
 })
 
 test('src/utils/index.ts getClosePrAxiosProps', () => {
@@ -98,7 +115,7 @@ test('src/utils/index.ts getClosePrAxiosProps', () => {
 })
 
 test('src/utils/index.ts getCommentPrProps', () => {
-  expect(JSON.stringify(getCommentPrProps('body', {test: 'test'}))).toBe(
+  expect(JSON.stringify(getCommentPrProps('body'))).toBe(
     JSON.stringify({
       method: 'POST',
       headers: {
@@ -106,12 +123,9 @@ test('src/utils/index.ts getCommentPrProps', () => {
         'content-type': 'application/json',
         Authorization: `Bearer githubToken`
       },
-      url: 'https://api.github.com/repos/a/b/pulls/number/comments',
+      url: 'https://api.github.com/repos/a/b/issues/number/comments',
       data: {
-        start_side: 'RIGHT',
-        commit_id: 'after',
-        body: 'body',
-        test: 'test'
+        body: 'body'
       }
     })
   )

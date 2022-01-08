@@ -1,0 +1,14 @@
+
+@token=123
+
+get https://api.github.com/repos/threfo/change_log_action/pulls/1/commits
+
+###
+post https://api.github.com/repos/threfo/change_log_action/issues/1/comments
+Accept: application/vnd.github.v3+json
+content-type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "body": "teset"
+}
