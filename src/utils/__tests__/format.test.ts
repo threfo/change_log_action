@@ -11,7 +11,8 @@ import {
   getIssueUrl,
   getIssueUrlMd,
   commitItem2Changelog,
-  getDateMd
+  getDateMd,
+  getCommentBody
 } from '../format'
 
 const mockData = [
@@ -395,6 +396,54 @@ test('src/utils/format.ts header2Obj', () => {
       issueUrl: 'https://www.tapd.cn/23766501/s/1238756'
     })
   )
+
+  expect(
+    JSON.stringify(
+      header2Obj(
+        'fix: --bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/23766501/s/1238756'
+      )
+    )
+  ).toBe(
+    JSON.stringify({
+      type: 'bug',
+      scope: '面试官工作台',
+      subject: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
+      ticket: '1010381',
+      issueUrl: 'https://www.tapd.cn/23766501/s/1238756'
+    })
+  )
+
+  expect(
+    JSON.stringify(
+      header2Obj(
+        'fix: --bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/23766501/s/1238756'
+      )
+    )
+  ).toBe(
+    JSON.stringify({
+      type: 'bug',
+      scope: '面试官工作台',
+      subject: '简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据',
+      ticket: '1010381',
+      issueUrl: 'https://www.tapd.cn/23766501/s/1238756'
+    })
+  )
+
+  expect(
+    JSON.stringify(
+      header2Obj(
+        'fix: --story=1007605 --user=Thomas console 后台配置快捷组件 https://www.tapd.cn/23766501/s/1240224'
+      )
+    )
+  ).toBe(
+    JSON.stringify({
+      type: 'story',
+      scope: undefined,
+      subject: 'console 后台配置快捷组件',
+      ticket: '1007605',
+      issueUrl: 'https://www.tapd.cn/23766501/s/1240224'
+    })
+  )
 })
 
 test('src/utils/format.ts message2Obj', () => {
@@ -652,7 +701,7 @@ test('src/utils/format.ts commitItem2Changelog', () => {
   expect(
     commitItem2Changelog({subject: 'subject', html_url: 'html_url'}, {})
   ).toBe(
-    '<details>\n<summary>subject</summary>\n<pre><a href="html_url" title="" target="_blank">详细代码</a></pre>\n</details>'
+    '<details>\n<summary>subject</summary>\n<a href="html_url" title="" target="_blank">详细代码</a>\n</details>'
   )
 })
 
@@ -661,5 +710,28 @@ test('src/utils/format.ts getDateMd', () => {
 
   expect(getDateMd({author: {date: '2022-01-05T06:14:15Z'}})).toBe(
     '2022/01/05 14:14'
+  )
+})
+
+test('src/utils/format.ts getCommentBody', () => {
+  expect(getCommentBody([], {})).toBe('')
+
+  expect(
+    getCommentBody(
+      [
+        {
+          header: 'header1',
+          body: 'body1',
+          footer: 'footer1',
+          type: 'type1',
+          scope: 'scope1',
+          subject: 'subject1',
+          ticket: 'ticket1'
+        }
+      ],
+      {}
+    )
+  ).toBe(
+    `# CHANGE LOG\n\n## scope1\n\n### type1\n\n<details>\n<summary>⚠️ subject1</summary>\nbody1<br /><br />⚠️重点注意<br /> footer1\n</details>\n\n## ⚠️ 需要注意\n\n<details>\n<summary>footer1</summary>\nsubject1\n\nbody1\n</details>`
   )
 })

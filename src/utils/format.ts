@@ -38,7 +38,7 @@ export const header2Obj = (str: string) => {
   const header2 = notGitMoJiTitle2Obj(str)
   const header3 = tapd2Obj(str)
 
-  return [header1, header2, header3].reduce(
+  let headerObj = [header1, header2, header3].reduce(
     (obj: any, item: any) => {
       Object.keys(item).forEach(key => {
         const val = item[key]
@@ -50,6 +50,23 @@ export const header2Obj = (str: string) => {
     },
     {type: undefined, scope: undefined, subject: str, ticket: undefined}
   )
+
+  const {issueUrl, subject} = headerObj || {}
+  if (!issueUrl) {
+    const tapdChecker = tapd2Obj(subject)
+
+    headerObj = [tapdChecker].reduce((obj: any, item: any) => {
+      Object.keys(tapdChecker).forEach(key => {
+        const val = item[key]
+        if (val) {
+          obj[key] = val
+        }
+      })
+      return obj
+    }, headerObj)
+  }
+
+  return headerObj
 }
 
 export const message2Obj = (msg: string) => {
@@ -86,7 +103,7 @@ export const getCommitObj = (item: any) => {
 const getScopeMap = (list: any[]) => {
   const scopeMap: any = {}
   list.forEach(item => {
-    const {type, scope = '其他'} = item
+    const {type, scope = 'other'} = item
     if (type) {
       const scopeTypeMap = scopeMap[scope] || {}
       const scopeTypeArr = scopeTypeMap[type] || []
@@ -101,7 +118,16 @@ const getScopeMap = (list: any[]) => {
 
 export const commitListObj2CommentBodyObj = (list: any[]) => {
   const notTypeArr: any[] = list.filter(({type}) => !type)
-  const scopeMap: any = getScopeMap(list.filter(({type}) => type))
+  let scopeMap: any = getScopeMap(list.filter(({type}) => type))
+
+  const {other, ...otherScopeMap} = scopeMap
+
+  if (other) {
+    scopeMap = {
+      ...otherScopeMap,
+      other
+    }
+  }
 
   return {
     notTypeArr,
@@ -157,15 +183,9 @@ export const getPreStr = (item: any, inputOptions: InputOptionsType) => {
   }
 
   if (footer) {
-    strArr.push(`⚠️**重点注意**<br /> ${footer}`)
+    strArr.push(`⚠️重点注意<br /> ${footer}`)
   }
-
-  let preStr = strArr.join('<br /><br />')
-  if (preStr) {
-    preStr = `<pre>${preStr}</pre>`
-  }
-
-  return preStr
+  return strArr.join('<br /><br />')
 }
 
 export const getCodeMd = (item: any) => {
@@ -199,28 +219,96 @@ export const getPreHeader = (item: any, inputOptions: InputOptionsType) => {
     .join(' | ')
 }
 
+export const getDetailsMd = (summary: string, pre: string) => {
+  return [
+    '<details>',
+    `<summary>${summary}</summary>`,
+    `${pre}`,
+    '</details>'
+  ].join('\n')
+}
+
+export const getTitleAndBodyMd = (
+  title: string,
+  bodyList: string | string[]
+) => {
+  let bodyStr: string = bodyList as string
+  if (Array.isArray(bodyList)) {
+    bodyStr = bodyList.filter(i => i).join('\n\n')
+  }
+
+  let arr: string[] = []
+  if (bodyStr) {
+    arr = [title, bodyStr]
+  }
+
+  return arr.join('\n\n')
+}
+
 export const commitItem2Changelog = (
   item: any,
   inputOptions: InputOptionsType
 ) => {
-  const {subject} = item
+  const {subject, footer} = item
   const preStr = getPreStr(item, inputOptions)
   let str = subject || ''
 
   if (preStr && str) {
-    str = [
-      '<details>',
-      `<summary>${subject}</summary>`,
-      preStr,
-      '</details>'
-    ].join('\n')
+    str = getDetailsMd(`${!!footer ? '⚠️ ' : ''}${subject}`, preStr)
   }
 
   return str
 }
 
-export const getNotTypeTips = (notTypeArr: any[]) => {
-  let str = ''
+export const getNotTypeTips = (
+  notTypeArr: any[],
+  inputOptions: InputOptionsType
+) => {
+  return getTitleAndBodyMd(
+    '## 没有Type不符合规范的提交有',
+    notTypeArr
+      .map((item: any) => commitItem2Changelog(item, inputOptions))
+      .filter(i => i)
+      .join('\n')
+  )
+}
+
+export const needNoticeStr = (list: any[], inputOptions: InputOptionsType) => {
+  const noticeStr = list
+    .filter(({footer}) => !!footer)
+    .map(item => {
+      const {footer, body, subject} = item
+
+      const preStr = [subject, body, getPreHeader(item, inputOptions)]
+        .filter(i => i)
+        .join('\n\n')
+      return getDetailsMd(footer, preStr)
+    })
+
+  return getTitleAndBodyMd('## ⚠️ 需要注意', noticeStr)
+}
+
+export const getChangeLogBody = (
+  scopeMap: any,
+  inputOptions: InputOptionsType
+) => {
+  const bodyStr = Object.keys(scopeMap).map(scope => {
+    const scopeTypeMap = scopeMap[scope]
+
+    const scopeStr = Object.keys(scopeTypeMap).map(type => {
+      const scopeTypeArr: string[] = (scopeTypeMap[type] || []).map(
+        (item: any) => commitItem2Changelog(item, inputOptions)
+      )
+      return getTitleAndBodyMd(
+        `### ${type}`,
+        scopeTypeArr.filter(i => i).join('\n')
+      )
+    })
+
+    return getTitleAndBodyMd(`## ${scope}`, scopeStr)
+  })
+
+  return getTitleAndBodyMd('# CHANGE LOG', bodyStr)
 }
 
 export const getCommentBody = (list: any[], inputOptions: InputOptionsType) => {
@@ -229,24 +317,10 @@ export const getCommentBody = (list: any[], inputOptions: InputOptionsType) => {
 
   const {notTypeArr, scopeMap} = commitListObj2CommentBodyObj(list)
 
-  const arr = ['# CHANGE LOG']
+  const changelogBody = getChangeLogBody(scopeMap, inputOptions)
+  const notTypeTips = getNotTypeTips(notTypeArr, inputOptions)
 
-  Object.keys(scopeMap).forEach(scope => {
-    arr.push(`## ${scope}`)
-
-    const scopeTypeMap = scopeMap[scope]
-
-    Object.keys(scopeTypeMap).forEach(type => {
-      arr.push(`### ${type}`)
-
-      const scopeTypeArr: string[] = (scopeTypeMap[type] || []).map(
-        (item: any) => commitItem2Changelog(item, inputOptions)
-      )
-      arr.push(scopeTypeArr.join('\n'))
-    })
-  })
-
-  return `${arr.join('\n\n')}
-  \n\n
-  `
+  return [changelogBody, notTypeTips, needNoticeStr(list, inputOptions)]
+    .filter(i => i)
+    .join('\n\n')
 }

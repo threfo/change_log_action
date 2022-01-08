@@ -82,11 +82,22 @@ exports.runAction = runAction;
 
 "use strict";
 
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getCommentBody = exports.getNotTypeTips = exports.commitItem2Changelog = exports.getPreHeader = exports.getDateMd = exports.getCodeMd = exports.getPreStr = exports.getIssueUrlMd = exports.getIssueUrl = exports.commitListObj2CommentBodyObj = exports.getCommitObj = exports.message2Obj = exports.header2Obj = exports.tapd2Obj = exports.notGitMoJiTitle2Obj = exports.haveGitMoJiTitle2Obj = exports.fixColon = void 0;
+exports.getCommentBody = exports.getChangeLogBody = exports.needNoticeStr = exports.getNotTypeTips = exports.commitItem2Changelog = exports.getTitleAndBodyMd = exports.getDetailsMd = exports.getPreHeader = exports.getDateMd = exports.getCodeMd = exports.getPreStr = exports.getIssueUrlMd = exports.getIssueUrl = exports.commitListObj2CommentBodyObj = exports.getCommitObj = exports.message2Obj = exports.header2Obj = exports.tapd2Obj = exports.notGitMoJiTitle2Obj = exports.haveGitMoJiTitle2Obj = exports.fixColon = void 0;
 const moment_1 = __importDefault(__nccwpck_require__(9623));
 const gitMoJiStartExp = /^(?::\w*:|(?:\ud83c[\udf00-\udfff])|(?:\ud83d[\udc00-\ude4f\ude80-\udeff])|[\u2600-\u2B55])\s(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/;
 const notGitMoJiStartExp = /^(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/;
@@ -115,7 +126,7 @@ const header2Obj = (str) => {
     const header1 = (0, exports.haveGitMoJiTitle2Obj)(str);
     const header2 = (0, exports.notGitMoJiTitle2Obj)(str);
     const header3 = (0, exports.tapd2Obj)(str);
-    return [header1, header2, header3].reduce((obj, item) => {
+    let headerObj = [header1, header2, header3].reduce((obj, item) => {
         Object.keys(item).forEach(key => {
             const val = item[key];
             if (val) {
@@ -124,6 +135,20 @@ const header2Obj = (str) => {
         });
         return obj;
     }, { type: undefined, scope: undefined, subject: str, ticket: undefined });
+    const { issueUrl, subject } = headerObj || {};
+    if (!issueUrl) {
+        const tapdChecker = (0, exports.tapd2Obj)(subject);
+        headerObj = [tapdChecker].reduce((obj, item) => {
+            Object.keys(tapdChecker).forEach(key => {
+                const val = item[key];
+                if (val) {
+                    obj[key] = val;
+                }
+            });
+            return obj;
+        }, headerObj);
+    }
+    return headerObj;
 };
 exports.header2Obj = header2Obj;
 const message2Obj = (msg) => {
@@ -153,7 +178,7 @@ exports.getCommitObj = getCommitObj;
 const getScopeMap = (list) => {
     const scopeMap = {};
     list.forEach(item => {
-        const { type, scope = '其他' } = item;
+        const { type, scope = 'other' } = item;
         if (type) {
             const scopeTypeMap = scopeMap[scope] || {};
             const scopeTypeArr = scopeTypeMap[type] || [];
@@ -166,7 +191,11 @@ const getScopeMap = (list) => {
 };
 const commitListObj2CommentBodyObj = (list) => {
     const notTypeArr = list.filter(({ type }) => !type);
-    const scopeMap = getScopeMap(list.filter(({ type }) => type));
+    let scopeMap = getScopeMap(list.filter(({ type }) => type));
+    const { other } = scopeMap, otherScopeMap = __rest(scopeMap, ["other"]);
+    if (other) {
+        scopeMap = Object.assign(Object.assign({}, otherScopeMap), { other });
+    }
     return {
         notTypeArr,
         scopeMap
@@ -211,13 +240,9 @@ const getPreStr = (item, inputOptions) => {
         strArr.push(body);
     }
     if (footer) {
-        strArr.push(`⚠️**重点注意**<br /> ${footer}`);
+        strArr.push(`⚠️重点注意<br /> ${footer}`);
     }
-    let preStr = strArr.join('<br /><br />');
-    if (preStr) {
-        preStr = `<pre>${preStr}</pre>`;
-    }
-    return preStr;
+    return strArr.join('<br /><br />');
 };
 exports.getPreStr = getPreStr;
 const getCodeMd = (item) => {
@@ -250,42 +275,78 @@ const getPreHeader = (item, inputOptions) => {
         .join(' | ');
 };
 exports.getPreHeader = getPreHeader;
+const getDetailsMd = (summary, pre) => {
+    return [
+        '<details>',
+        `<summary>${summary}</summary>`,
+        `${pre}`,
+        '</details>'
+    ].join('\n');
+};
+exports.getDetailsMd = getDetailsMd;
+const getTitleAndBodyMd = (title, bodyList) => {
+    let bodyStr = bodyList;
+    if (Array.isArray(bodyList)) {
+        bodyStr = bodyList.filter(i => i).join('\n\n');
+    }
+    let arr = [];
+    if (bodyStr) {
+        arr = [title, bodyStr];
+    }
+    return arr.join('\n\n');
+};
+exports.getTitleAndBodyMd = getTitleAndBodyMd;
 const commitItem2Changelog = (item, inputOptions) => {
-    const { subject } = item;
+    const { subject, footer } = item;
     const preStr = (0, exports.getPreStr)(item, inputOptions);
     let str = subject || '';
     if (preStr && str) {
-        str = [
-            '<details>',
-            `<summary>${subject}</summary>`,
-            preStr,
-            '</details>'
-        ].join('\n');
+        str = (0, exports.getDetailsMd)(`${!!footer ? '⚠️ ' : ''}${subject}`, preStr);
     }
     return str;
 };
 exports.commitItem2Changelog = commitItem2Changelog;
-const getNotTypeTips = (notTypeArr) => {
-    let str = '';
+const getNotTypeTips = (notTypeArr, inputOptions) => {
+    return (0, exports.getTitleAndBodyMd)('## 没有Type不符合规范的提交有', notTypeArr
+        .map((item) => (0, exports.commitItem2Changelog)(item, inputOptions))
+        .filter(i => i)
+        .join('\n'));
 };
 exports.getNotTypeTips = getNotTypeTips;
+const needNoticeStr = (list, inputOptions) => {
+    const noticeStr = list
+        .filter(({ footer }) => !!footer)
+        .map(item => {
+        const { footer, body, subject } = item;
+        const preStr = [subject, body, (0, exports.getPreHeader)(item, inputOptions)]
+            .filter(i => i)
+            .join('\n\n');
+        return (0, exports.getDetailsMd)(footer, preStr);
+    });
+    return (0, exports.getTitleAndBodyMd)('## ⚠️ 需要注意', noticeStr);
+};
+exports.needNoticeStr = needNoticeStr;
+const getChangeLogBody = (scopeMap, inputOptions) => {
+    const bodyStr = Object.keys(scopeMap).map(scope => {
+        const scopeTypeMap = scopeMap[scope];
+        const scopeStr = Object.keys(scopeTypeMap).map(type => {
+            const scopeTypeArr = (scopeTypeMap[type] || []).map((item) => (0, exports.commitItem2Changelog)(item, inputOptions));
+            return (0, exports.getTitleAndBodyMd)(`### ${type}`, scopeTypeArr.filter(i => i).join('\n'));
+        });
+        return (0, exports.getTitleAndBodyMd)(`## ${scope}`, scopeStr);
+    });
+    return (0, exports.getTitleAndBodyMd)('# CHANGE LOG', bodyStr);
+};
+exports.getChangeLogBody = getChangeLogBody;
 const getCommentBody = (list, inputOptions) => {
     console.log('getCommentBody list', list);
     console.log('getCommentBody inputOptions', inputOptions);
     const { notTypeArr, scopeMap } = (0, exports.commitListObj2CommentBodyObj)(list);
-    const arr = ['# CHANGE LOG'];
-    Object.keys(scopeMap).forEach(scope => {
-        arr.push(`## ${scope}`);
-        const scopeTypeMap = scopeMap[scope];
-        Object.keys(scopeTypeMap).forEach(type => {
-            arr.push(`### ${type}`);
-            const scopeTypeArr = (scopeTypeMap[type] || []).map((item) => (0, exports.commitItem2Changelog)(item, inputOptions));
-            arr.push(scopeTypeArr.join('\n'));
-        });
-    });
-    return `${arr.join('\n\n')}
-  \n\n
-  `;
+    const changelogBody = (0, exports.getChangeLogBody)(scopeMap, inputOptions);
+    const notTypeTips = (0, exports.getNotTypeTips)(notTypeArr, inputOptions);
+    return [changelogBody, notTypeTips, (0, exports.needNoticeStr)(list, inputOptions)]
+        .filter(i => i)
+        .join('\n\n');
 };
 exports.getCommentBody = getCommentBody;
 
