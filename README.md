@@ -1,3 +1,5 @@
+[![Build status](https://github.com/threfo/change_log_action/actions/workflows/check-dist.yml/badge.svg?branch=main)](https://github.com/threfo/change_log_action/actions/workflows/check-dist.yml)
+
 # change_log_action
 
 提交 pr 的时候获取所有的 commits 信息进行分析整理成 changelog，[具体效果](https://github.com/threfo/change_log_action/pull/1)
