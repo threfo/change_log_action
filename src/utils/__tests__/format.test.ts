@@ -12,7 +12,9 @@ import {
   getIssueUrlMd,
   commitItem2Changelog,
   getDateMd,
-  getCommentBody
+  getCommentBody,
+  getPreStr,
+  getChangeLogBody
 } from '../format'
 
 const mockData = [
@@ -613,8 +615,8 @@ test('src/utils/format.ts commitListObj2CommentBodyObj', () => {
     footer: 'footer3',
     type: 'type2',
     scope: 'scope2',
-    subject: 'subject2',
-    ticket: 'ticket2'
+    subject: 'subject3',
+    ticket: 'ticket3'
   }
   const test4 = {
     header: 'header4',
@@ -634,27 +636,43 @@ test('src/utils/format.ts commitListObj2CommentBodyObj', () => {
     ticket: 'ticket5'
   }
 
+  const test6 = {
+    header: 'header6',
+    body: 'body6',
+    footer: 'footer6',
+    type: 'type2',
+    scope: 'scope2',
+    subject: 'subject2',
+    ticket: 'ticket6'
+  }
+
   expect(
     JSON.stringify(
-      commitListObj2CommentBodyObj([test1, test2, test3, test4, test5])
+      commitListObj2CommentBodyObj([test1, test2, test3, test4, test5, test6])
     )
   ).toBe(
     JSON.stringify({
       notTypeArr: [test5],
       scopeMap: {
         scope1: {
-          type1: [test1]
+          type1: {
+            subject1: [test1]
+          }
         },
         scope2: {
-          type2: [test2, test3],
-          type1: [test4]
+          type2: {
+            subject2: [test2, test6],
+            subject3: [test3]
+          },
+          type1: {
+            subject4: [test4]
+          }
         }
       }
     })
   )
 })
 
-getIssueUrl
 test('src/utils/format.ts getIssueUrl', () => {
   expect(getIssueUrl({}, {})).toBe('')
   expect(getIssueUrl({ticket: 'ticket', issueUrl: 'issueUrl'}, {})).toBe(
@@ -703,6 +721,18 @@ test('src/utils/format.ts commitItem2Changelog', () => {
   ).toBe(
     '<details>\n<summary>subject</summary>\n<a href="html_url" title="" target="_blank">详细代码</a>\n</details>'
   )
+
+  expect(
+    commitItem2Changelog(
+      {
+        subject: 'subject',
+        group: [{subject: 'subject1', body: 'body1', footer: 'footer1'}]
+      },
+      {}
+    )
+  ).toBe(
+    '<details>\n<summary>subject</summary>\nbody1<br /><br />⚠️重点注意<br /> footer1\n</details>'
+  )
 })
 
 test('src/utils/format.ts getDateMd', () => {
@@ -710,6 +740,35 @@ test('src/utils/format.ts getDateMd', () => {
 
   expect(getDateMd({author: {date: '2022-01-05T06:14:15Z'}})).toBe(
     '2022/01/05 14:14'
+  )
+})
+
+test('src/utils/format.ts getChangeLogBody', () => {
+  expect(getChangeLogBody({}, {})).toBe('')
+
+  expect(
+    getChangeLogBody(
+      {
+        scope1: {
+          type1: {
+            subject1: [
+              {
+                header: 'header1',
+                body: 'body1',
+                footer: 'footer1',
+                type: 'type1',
+                scope: 'scope1',
+                subject: 'subject1',
+                ticket: 'ticket1'
+              }
+            ]
+          }
+        }
+      },
+      {}
+    )
+  ).toBe(
+    '# CHANGE LOG\n\n## scope1\n\n### type1\n\n<details>\n<summary>subject1</summary>\nbody1<br /><br />⚠️重点注意<br /> footer1\n</details>'
   )
 })
 
@@ -732,6 +791,30 @@ test('src/utils/format.ts getCommentBody', () => {
       {}
     )
   ).toBe(
-    `# CHANGE LOG\n\n## scope1\n\n### type1\n\n<details>\n<summary>⚠️ subject1</summary>\nbody1<br /><br />⚠️重点注意<br /> footer1\n</details>\n\n## ⚠️ 需要注意\n\n<details>\n<summary>footer1</summary>\nsubject1\n\nbody1\n</details>`
+    `# CHANGE LOG\n\n## scope1\n\n### type1\n\n<details>\n<summary>subject1</summary>\nbody1<br /><br />⚠️重点注意<br /> footer1\n</details>\n\n## ⚠️ 需要注意\n\n<details>\n<summary>footer1</summary>\nsubject1\n\nbody1\n</details>`
+  )
+})
+
+test('src/utils/format.ts getPreStr', () => {
+  expect(getPreStr({}, {})).toBe('')
+
+  expect(getPreStr({body: 'body', footer: 'footer'}, {})).toBe(
+    'body<br /><br />⚠️重点注意<br /> footer'
+  )
+
+  expect(
+    getPreStr(
+      {
+        body: 'body',
+        footer: 'footer',
+        group: [
+          {body: 'body1', footer: 'footer1'},
+          {body: 'body2', footer: 'footer2'}
+        ]
+      },
+      {}
+    )
+  ).toBe(
+    'body1<br /><br />⚠️重点注意<br /> footer1<br /><br />body2<br /><br />⚠️重点注意<br /> footer2'
   )
 })

@@ -178,12 +178,14 @@ exports.getCommitObj = getCommitObj;
 const getScopeMap = (list) => {
     const scopeMap = {};
     list.forEach(item => {
-        const { type, scope = 'other' } = item;
+        const { type, scope = 'other', subject } = item;
         if (type) {
             const scopeTypeMap = scopeMap[scope] || {};
-            const scopeTypeArr = scopeTypeMap[type] || [];
-            scopeTypeArr.push(item);
-            scopeTypeMap[type] = scopeTypeArr;
+            const scopeTypeSubjectMap = scopeTypeMap[type] || {};
+            const group = scopeTypeSubjectMap[subject] || [];
+            group.push(item);
+            scopeTypeSubjectMap[subject] = group;
+            scopeTypeMap[type] = scopeTypeSubjectMap;
             scopeMap[scope] = scopeTypeMap;
         }
     });
@@ -230,17 +232,23 @@ const getIssueUrlMd = (item, inputOptions) => {
 };
 exports.getIssueUrlMd = getIssueUrlMd;
 const getPreStr = (item, inputOptions) => {
-    const { body, footer } = item;
+    const { body, footer, group } = item;
     let strArr = [];
-    const preHeaderStr = (0, exports.getPreHeader)(item, inputOptions);
-    if (preHeaderStr) {
-        strArr.push(preHeaderStr);
+    const { length } = group || [];
+    if (length) {
+        strArr.push(...group.map((i) => (0, exports.getPreStr)(i, inputOptions)));
     }
-    if (body) {
-        strArr.push(body);
-    }
-    if (footer) {
-        strArr.push(`⚠️重点注意<br /> ${footer}`);
+    else {
+        const preHeaderStr = (0, exports.getPreHeader)(item, inputOptions);
+        if (preHeaderStr) {
+            strArr.push(preHeaderStr);
+        }
+        if (body) {
+            strArr.push(body);
+        }
+        if (footer) {
+            strArr.push(`⚠️重点注意<br /> ${footer}`);
+        }
     }
     return strArr.join('<br /><br />');
 };
@@ -301,7 +309,7 @@ const commitItem2Changelog = (item, inputOptions) => {
     const preStr = (0, exports.getPreStr)(item, inputOptions);
     let str = subject || '';
     if (preStr && str) {
-        str = (0, exports.getDetailsMd)(`${!!footer ? '⚠️ ' : ''}${subject}`, preStr);
+        str = (0, exports.getDetailsMd)(`${subject}${!!footer ? ' ⚠️' : ''}`, preStr);
     }
     return str;
 };
@@ -330,8 +338,12 @@ const getChangeLogBody = (scopeMap, inputOptions) => {
     const bodyStr = Object.keys(scopeMap).map(scope => {
         const scopeTypeMap = scopeMap[scope];
         const scopeStr = Object.keys(scopeTypeMap).map(type => {
-            const scopeTypeArr = (scopeTypeMap[type] || []).map((item) => (0, exports.commitItem2Changelog)(item, inputOptions));
-            return (0, exports.getTitleAndBodyMd)(`### ${type}`, scopeTypeArr.filter(i => i).join('\n'));
+            const scopeTypeSubjectMap = scopeTypeMap[type];
+            const subjectStrArr = Object.keys(scopeTypeSubjectMap).map(subject => {
+                const group = scopeTypeSubjectMap[subject] || [];
+                return (0, exports.commitItem2Changelog)({ group, subject }, inputOptions);
+            });
+            return (0, exports.getTitleAndBodyMd)(`### ${type}`, subjectStrArr);
         });
         return (0, exports.getTitleAndBodyMd)(`## ${scope}`, scopeStr);
     });
@@ -342,11 +354,15 @@ const getCommentBody = (list, inputOptions) => {
     console.log('getCommentBody list', list);
     console.log('getCommentBody inputOptions', inputOptions);
     const { notTypeArr, scopeMap } = (0, exports.commitListObj2CommentBodyObj)(list);
+    console.log('getCommentBody notTypeArr', notTypeArr);
+    console.log('getCommentBody scopeMap', scopeMap);
     const changelogBody = (0, exports.getChangeLogBody)(scopeMap, inputOptions);
     const notTypeTips = (0, exports.getNotTypeTips)(notTypeArr, inputOptions);
-    return [changelogBody, notTypeTips, (0, exports.needNoticeStr)(list, inputOptions)]
-        .filter(i => i)
-        .join('\n\n');
+    const needNotice = (0, exports.needNoticeStr)(list, inputOptions);
+    console.log('getCommentBody changelogBody', changelogBody);
+    console.log('getCommentBody notTypeTips', notTypeTips);
+    console.log('getCommentBody needNotice', needNotice);
+    return [changelogBody, notTypeTips, needNotice].filter(i => i).join('\n\n');
 };
 exports.getCommentBody = getCommentBody;
 

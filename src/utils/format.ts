@@ -103,13 +103,17 @@ export const getCommitObj = (item: any) => {
 const getScopeMap = (list: any[]) => {
   const scopeMap: any = {}
   list.forEach(item => {
-    const {type, scope = 'other'} = item
+    const {type, scope = 'other', subject} = item
     if (type) {
       const scopeTypeMap = scopeMap[scope] || {}
-      const scopeTypeArr = scopeTypeMap[type] || []
-      scopeTypeArr.push(item)
+      const scopeTypeSubjectMap = scopeTypeMap[type] || {}
 
-      scopeTypeMap[type] = scopeTypeArr
+      const group = scopeTypeSubjectMap[subject] || []
+      group.push(item)
+
+      scopeTypeSubjectMap[subject] = group
+
+      scopeTypeMap[type] = scopeTypeSubjectMap
       scopeMap[scope] = scopeTypeMap
     }
   })
@@ -169,22 +173,29 @@ export const getIssueUrlMd = (item: any, inputOptions: InputOptionsType) => {
 }
 
 export const getPreStr = (item: any, inputOptions: InputOptionsType) => {
-  const {body, footer} = item
+  const {body, footer, group} = item
 
   let strArr = []
 
-  const preHeaderStr = getPreHeader(item, inputOptions)
-  if (preHeaderStr) {
-    strArr.push(preHeaderStr)
+  const {length} = group || []
+
+  if (length) {
+    strArr.push(...group.map((i: any) => getPreStr(i, inputOptions)))
+  } else {
+    const preHeaderStr = getPreHeader(item, inputOptions)
+    if (preHeaderStr) {
+      strArr.push(preHeaderStr)
+    }
+
+    if (body) {
+      strArr.push(body)
+    }
+
+    if (footer) {
+      strArr.push(`⚠️重点注意<br /> ${footer}`)
+    }
   }
 
-  if (body) {
-    strArr.push(body)
-  }
-
-  if (footer) {
-    strArr.push(`⚠️重点注意<br /> ${footer}`)
-  }
   return strArr.join('<br /><br />')
 }
 
@@ -254,7 +265,7 @@ export const commitItem2Changelog = (
   let str = subject || ''
 
   if (preStr && str) {
-    str = getDetailsMd(`${!!footer ? '⚠️ ' : ''}${subject}`, preStr)
+    str = getDetailsMd(`${subject}${!!footer ? ' ⚠️' : ''}`, preStr)
   }
 
   return str
@@ -296,13 +307,15 @@ export const getChangeLogBody = (
     const scopeTypeMap = scopeMap[scope]
 
     const scopeStr = Object.keys(scopeTypeMap).map(type => {
-      const scopeTypeArr: string[] = (scopeTypeMap[type] || []).map(
-        (item: any) => commitItem2Changelog(item, inputOptions)
-      )
-      return getTitleAndBodyMd(
-        `### ${type}`,
-        scopeTypeArr.filter(i => i).join('\n')
-      )
+      const scopeTypeSubjectMap = scopeTypeMap[type]
+
+      const subjectStrArr = Object.keys(scopeTypeSubjectMap).map(subject => {
+        const group = scopeTypeSubjectMap[subject] || []
+
+        return commitItem2Changelog({group, subject}, inputOptions)
+      })
+
+      return getTitleAndBodyMd(`### ${type}`, subjectStrArr)
     })
 
     return getTitleAndBodyMd(`## ${scope}`, scopeStr)
@@ -317,10 +330,16 @@ export const getCommentBody = (list: any[], inputOptions: InputOptionsType) => {
 
   const {notTypeArr, scopeMap} = commitListObj2CommentBodyObj(list)
 
+  console.log('getCommentBody notTypeArr', notTypeArr)
+  console.log('getCommentBody scopeMap', scopeMap)
+
   const changelogBody = getChangeLogBody(scopeMap, inputOptions)
   const notTypeTips = getNotTypeTips(notTypeArr, inputOptions)
+  const needNotice = needNoticeStr(list, inputOptions)
 
-  return [changelogBody, notTypeTips, needNoticeStr(list, inputOptions)]
-    .filter(i => i)
-    .join('\n\n')
+  console.log('getCommentBody changelogBody', changelogBody)
+  console.log('getCommentBody notTypeTips', notTypeTips)
+  console.log('getCommentBody needNotice', needNotice)
+
+  return [changelogBody, notTypeTips, needNotice].filter(i => i).join('\n\n')
 }
