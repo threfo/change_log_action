@@ -276,7 +276,7 @@ export const getNotTypeTips = (
   inputOptions: InputOptionsType
 ) => {
   return getTitleAndBodyMd(
-    '## 没有Type不符合规范的提交有',
+    `## 没有Type不符合规范的提交有 (${notTypeArr.length})`,
     notTypeArr
       .map((item: any) => commitItem2Changelog(item, inputOptions))
       .filter(i => i)
@@ -325,21 +325,10 @@ export const getChangeLogBody = (
 }
 
 export const getCommentBody = (list: any[], inputOptions: InputOptionsType) => {
-  console.log('getCommentBody list', list)
-  console.log('getCommentBody inputOptions', inputOptions)
-
   const {notTypeArr, scopeMap} = commitListObj2CommentBodyObj(list)
-
-  console.log('getCommentBody notTypeArr', notTypeArr)
-  console.log('getCommentBody scopeMap', scopeMap)
-
   const changelogBody = getChangeLogBody(scopeMap, inputOptions)
   const notTypeTips = getNotTypeTips(notTypeArr, inputOptions)
   const needNotice = needNoticeStr(list, inputOptions)
-
-  console.log('getCommentBody changelogBody', changelogBody)
-  console.log('getCommentBody notTypeTips', notTypeTips)
-  console.log('getCommentBody needNotice', needNotice)
 
   return [changelogBody, notTypeTips, needNotice].filter(i => i).join('\n\n')
 }
