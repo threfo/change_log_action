@@ -43,7 +43,7 @@ test('src/utils/index.ts getProjectFilePath', () => {
 
 test('src/utils/index.ts getPackageJson', async () => {
   const json = await getPackageJson()
-  console.log('json', json)
+  // console.log('json', json)
   const {name} = json || {}
 
   expect(name).toBe('change_log_action')
@@ -62,8 +62,13 @@ test('src/utils/index.ts getPrCommitId', () => {
 })
 
 test('src/utils/index.ts getPrCommitsUrl', () => {
-  expect(getPrCommitsUrl()).toBe(
-    'https://api.github.com/repos/a/b/pulls/number/commits'
+  expect(
+    getPrCommitsUrl({
+      per_page: 100,
+      page: 1
+    })
+  ).toBe(
+    'https://api.github.com/repos/a/b/pulls/number/commits?per_page=100&page=1'
   )
 })
 
@@ -90,7 +95,7 @@ test('src/utils/index.ts getPrCommitsProps', () => {
         'content-type': 'application/json',
         Authorization: `Bearer githubToken`
       },
-      url: 'https://api.github.com/repos/a/b/pulls/number/commits'
+      url: 'https://api.github.com/repos/a/b/pulls/number/commits?per_page=100&page=1'
     })
   )
 })
