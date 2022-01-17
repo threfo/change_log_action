@@ -10,6 +10,8 @@ const notGitMoJiStartExp =
 const tapdExp =
   /^--(?<type>\w*)\W(?<ticket>\d*)(?:\s\S*)?\s(?:【(?<scope>.*)】)?(?<subject>(?:(?!h).)*(?:(?!\s).))\s?(?<issueUrl>http.*)?$/
 
+export const mergeExp = /^Merge\s(pull request|branch|commit)\s/
+
 export const fixColon = (str: string) => {
   return str.replace(/：/g, ':')
 }
@@ -276,11 +278,7 @@ export const getNotTypeTips = (
   inputOptions: InputOptionsType
 ) => {
   const showList = notTypeArr.filter(({subject}) => {
-    return (
-      subject.indexOf('Merge pull request') === -1 ||
-      subject.indexOf('Merge branch') === -1 ||
-      subject.indexOf('Merge commit') === -1
-    )
+    return !mergeExp.test(subject)
   })
 
   return getTitleAndBodyMd(

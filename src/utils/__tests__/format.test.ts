@@ -15,7 +15,8 @@ import {
   getCommentBody,
   getPreStr,
   getChangeLogBody,
-  getNotTypeTips
+  getNotTypeTips,
+  mergeExp
 } from '../format'
 
 test('src/utils/format.ts fixColon', () => {
@@ -703,4 +704,15 @@ test('src/utils/format.ts getNotTypeTips', () => {
       {}
     )
   ).toBe('')
+})
+
+test('src/utils/format.ts mergeExp', () => {
+  expect(mergeExp.test('Merge pull request #3 from threfo/test_merge')).toBe(
+    true
+  )
+  expect(mergeExp.test(`Merge commit '123123' into xxx`)).toBe(true)
+  expect(mergeExp.test(`Merge branch '123' into asdfa`)).toBe(true)
+  expect(mergeExp.test(`✅ fix(模块): Merge pull request`)).toBe(false)
+  expect(mergeExp.test(`✅ fix: Merge branch '123' into asdfa`)).toBe(false)
+  expect(mergeExp.test(`fix: Merge commit '123123' into xxx`)).toBe(false)
 })
