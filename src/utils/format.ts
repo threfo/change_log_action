@@ -27,7 +27,7 @@ export const notGitMoJiTitle2Obj = (str: string) => {
 }
 
 export const tapd2Obj = (str: string) => {
-  // --bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/23766501/s/1238756
+  // --bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/12345/s/1238756
   const [, type, ticket, scope, subject, issueUrl] = tapdExp.exec(str) || []
 
   return {type, scope, subject, ticket, issueUrl}
@@ -87,7 +87,7 @@ export const message2Obj = (msg: string) => {
 }
 
 export const getCommitObj = (item: any) => {
-  console.log('getCommitObj', item)
+  // console.log('getCommitObj', item)
 
   const {commit, html_url} = item || {}
   const {author, message} = commit || {}
@@ -275,9 +275,13 @@ export const getNotTypeTips = (
   notTypeArr: any[],
   inputOptions: InputOptionsType
 ) => {
+  const showList = notTypeArr.filter(
+    ({subject}) => subject.indexOf('Merge pull request') === -1
+  )
+
   return getTitleAndBodyMd(
-    '## 没有Type不符合规范的提交有',
-    notTypeArr
+    `## 没有Type不符合规范的提交有 (${showList.length})`,
+    showList
       .map((item: any) => commitItem2Changelog(item, inputOptions))
       .filter(i => i)
       .join('\n')
@@ -325,21 +329,10 @@ export const getChangeLogBody = (
 }
 
 export const getCommentBody = (list: any[], inputOptions: InputOptionsType) => {
-  console.log('getCommentBody list', list)
-  console.log('getCommentBody inputOptions', inputOptions)
-
   const {notTypeArr, scopeMap} = commitListObj2CommentBodyObj(list)
-
-  console.log('getCommentBody notTypeArr', notTypeArr)
-  console.log('getCommentBody scopeMap', scopeMap)
-
   const changelogBody = getChangeLogBody(scopeMap, inputOptions)
   const notTypeTips = getNotTypeTips(notTypeArr, inputOptions)
   const needNotice = needNoticeStr(list, inputOptions)
-
-  console.log('getCommentBody changelogBody', changelogBody)
-  console.log('getCommentBody notTypeTips', notTypeTips)
-  console.log('getCommentBody needNotice', needNotice)
 
   return [changelogBody, notTypeTips, needNotice].filter(i => i).join('\n\n')
 }

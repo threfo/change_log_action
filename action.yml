@@ -1,4 +1,4 @@
-name: 'Changelog action'
+name: 'changelog_with_comment'
 description: '当pr提交时校验提交信息，当pr合并后更加commit信息自动更新version和changelog'
 author: 'Thomas'
 branding:

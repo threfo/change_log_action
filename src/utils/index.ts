@@ -17,7 +17,7 @@ export const getPackageJson = async (): Promise<any> => {
 }
 
 export const getRepository = () => {
-  console.log('GITHUB_REPOSITORY', process.env.GITHUB_REPOSITORY)
+  // console.log('GITHUB_REPOSITORY', process.env.GITHUB_REPOSITORY)
   const [repoOwner, repoName] = (process.env.GITHUB_REPOSITORY || '').split('/')
   let repository = ''
   if (repoOwner && repoName) {
@@ -51,7 +51,7 @@ export const getCommentPrUrl = (): string => {
 }
 
 export const getGithubToken = () => {
-  console.log('getGithubToken')
+  // console.log('getGithubToken')
   return getInput('githubToken', {
     required: true
   })
@@ -88,7 +88,7 @@ export const getClosePrAxiosProps = (
 }
 
 export const getCommentPrProps = (body: string): AxiosRequestConfig => {
-  console.log('getCommentPrProps body', body)
+  // console.log('getCommentPrProps body', body)
   return {
     method: 'POST',
     headers: getHeaders(),
@@ -100,7 +100,7 @@ export const getCommentPrProps = (body: string): AxiosRequestConfig => {
 }
 
 export const getPrCommitsProps = (): AxiosRequestConfig => {
-  console.log('getPrCommitsProps')
+  // console.log('getPrCommitsProps')
   return {
     method: 'GET',
     headers: getHeaders(),
@@ -115,6 +115,6 @@ export const closePr = async (title: string, body: string) =>
 
 export const commentPr = async (body: string) => {
   const apiProps = getCommentPrProps(body)
-  console.log('commentPr apiProps', apiProps)
+  // console.log('commentPr apiProps', apiProps)
   await axios(apiProps)
 }

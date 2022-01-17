@@ -18,9 +18,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 // debug is only output if you set the secret `ACTIONS_STEP_DEBUG` to true
 const core_1 = __nccwpck_require__(2186);
-const github_1 = __nccwpck_require__(5438);
 const runner_1 = __nccwpck_require__(4240);
-console.log('github.context', github_1.context);
+// console.log('github.context', context)
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -64,10 +63,10 @@ const format_1 = __nccwpck_require__(1264);
 const runAction = (inputOptions) => __awaiter(void 0, void 0, void 0, function* () {
     // 获取 commit list
     const res = yield (0, utils_1.getPrCommits)();
-    console.log('getPrCommits res', res);
+    // console.log('getPrCommits res', res)
     const { data } = res || {};
     const list = data;
-    console.log('getPrCommits list', list);
+    // console.log('getPrCommits list', list)
     // 解析 格式化 list
     // 评论到当前 pr
     yield (0, utils_1.commentPr)((0, format_1.getCommentBody)(list.map(format_1.getCommitObj), inputOptions));
@@ -117,7 +116,7 @@ const notGitMoJiTitle2Obj = (str) => {
 };
 exports.notGitMoJiTitle2Obj = notGitMoJiTitle2Obj;
 const tapd2Obj = (str) => {
-    // --bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/23766501/s/1238756
+    // --bug=1010381 --user=Thomas 【面试官工作台】简历筛选/面试安排页面左侧的搜索框加入空格后就搜不出来数据 https://www.tapd.cn/12345/s/1238756
     const [, type, ticket, scope, subject, issueUrl] = tapdExp.exec(str) || [];
     return { type, scope, subject, ticket, issueUrl };
 };
@@ -167,7 +166,7 @@ const message2Obj = (msg) => {
 };
 exports.message2Obj = message2Obj;
 const getCommitObj = (item) => {
-    console.log('getCommitObj', item);
+    // console.log('getCommitObj', item)
     const { commit, html_url } = item || {};
     const { author, message } = commit || {};
     return Object.assign({ html_url,
@@ -315,7 +314,8 @@ const commitItem2Changelog = (item, inputOptions) => {
 };
 exports.commitItem2Changelog = commitItem2Changelog;
 const getNotTypeTips = (notTypeArr, inputOptions) => {
-    return (0, exports.getTitleAndBodyMd)('## 没有Type不符合规范的提交有', notTypeArr
+    const showList = notTypeArr.filter(({ subject }) => subject.indexOf('Merge pull request') === -1);
+    return (0, exports.getTitleAndBodyMd)(`## 没有Type不符合规范的提交有 (${showList.length})`, showList
         .map((item) => (0, exports.commitItem2Changelog)(item, inputOptions))
         .filter(i => i)
         .join('\n'));
@@ -351,17 +351,10 @@ const getChangeLogBody = (scopeMap, inputOptions) => {
 };
 exports.getChangeLogBody = getChangeLogBody;
 const getCommentBody = (list, inputOptions) => {
-    console.log('getCommentBody list', list);
-    console.log('getCommentBody inputOptions', inputOptions);
     const { notTypeArr, scopeMap } = (0, exports.commitListObj2CommentBodyObj)(list);
-    console.log('getCommentBody notTypeArr', notTypeArr);
-    console.log('getCommentBody scopeMap', scopeMap);
     const changelogBody = (0, exports.getChangeLogBody)(scopeMap, inputOptions);
     const notTypeTips = (0, exports.getNotTypeTips)(notTypeArr, inputOptions);
     const needNotice = (0, exports.needNoticeStr)(list, inputOptions);
-    console.log('getCommentBody changelogBody', changelogBody);
-    console.log('getCommentBody notTypeTips', notTypeTips);
-    console.log('getCommentBody needNotice', needNotice);
     return [changelogBody, notTypeTips, needNotice].filter(i => i).join('\n\n');
 };
 exports.getCommentBody = getCommentBody;
@@ -424,7 +417,7 @@ const getPackageJson = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.getPackageJson = getPackageJson;
 const getRepository = () => {
-    console.log('GITHUB_REPOSITORY', process.env.GITHUB_REPOSITORY);
+    // console.log('GITHUB_REPOSITORY', process.env.GITHUB_REPOSITORY)
     const [repoOwner, repoName] = (process.env.GITHUB_REPOSITORY || '').split('/');
     let repository = '';
     if (repoOwner && repoName) {
@@ -458,7 +451,7 @@ const getCommentPrUrl = () => {
 };
 exports.getCommentPrUrl = getCommentPrUrl;
 const getGithubToken = () => {
-    console.log('getGithubToken');
+    // console.log('getGithubToken')
     return (0, core_1.getInput)('githubToken', {
         required: true
     });
@@ -488,7 +481,7 @@ const getClosePrAxiosProps = (title, body) => {
 };
 exports.getClosePrAxiosProps = getClosePrAxiosProps;
 const getCommentPrProps = (body) => {
-    console.log('getCommentPrProps body', body);
+    // console.log('getCommentPrProps body', body)
     return {
         method: 'POST',
         headers: (0, exports.getHeaders)(),
@@ -500,7 +493,7 @@ const getCommentPrProps = (body) => {
 };
 exports.getCommentPrProps = getCommentPrProps;
 const getPrCommitsProps = () => {
-    console.log('getPrCommitsProps');
+    // console.log('getPrCommitsProps')
     return {
         method: 'GET',
         headers: (0, exports.getHeaders)(),
@@ -514,7 +507,7 @@ const closePr = (title, body) => __awaiter(void 0, void 0, void 0, function* () 
 exports.closePr = closePr;
 const commentPr = (body) => __awaiter(void 0, void 0, void 0, function* () {
     const apiProps = (0, exports.getCommentPrProps)(body);
-    console.log('commentPr apiProps', apiProps);
+    // console.log('commentPr apiProps', apiProps)
     yield (0, axios_1.default)(apiProps);
 });
 exports.commentPr = commentPr;

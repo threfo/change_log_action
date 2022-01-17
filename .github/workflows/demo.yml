@@ -16,4 +16,4 @@ jobs:
         id: code-check
         with:
           githubToken: ${{ secrets.ACCESS_TOKEN }}
-          issuesUrl: 'https://www.tapd.cn/23766501'
+          issuesUrl: 'https://www.tapd.cn/12345'
