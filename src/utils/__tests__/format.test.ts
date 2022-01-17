@@ -712,6 +712,9 @@ test('src/utils/format.ts mergeExp', () => {
   )
   expect(mergeExp.test(`Merge commit '123123' into xxx`)).toBe(true)
   expect(mergeExp.test(`Merge branch '123' into asdfa`)).toBe(true)
+  expect(mergeExp.test(`Merge remote-tracking branch 'xxxxx' into sdasd`)).toBe(
+    true
+  )
   expect(mergeExp.test(`✅ fix(模块): Merge pull request`)).toBe(false)
   expect(mergeExp.test(`✅ fix: Merge branch '123' into asdfa`)).toBe(false)
   expect(mergeExp.test(`fix: Merge commit '123123' into xxx`)).toBe(false)
