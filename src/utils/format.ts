@@ -275,9 +275,13 @@ export const getNotTypeTips = (
   notTypeArr: any[],
   inputOptions: InputOptionsType
 ) => {
+  const showList = notTypeArr.filter(
+    ({subject}) => subject.indexOf('Merge pull request') === -1
+  )
+
   return getTitleAndBodyMd(
-    `## 没有Type不符合规范的提交有 (${notTypeArr.length})`,
-    notTypeArr
+    `## 没有Type不符合规范的提交有 (${showList.length})`,
+    showList
       .map((item: any) => commitItem2Changelog(item, inputOptions))
       .filter(i => i)
       .join('\n')

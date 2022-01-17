@@ -14,7 +14,8 @@ import {
   getDateMd,
   getCommentBody,
   getPreStr,
-  getChangeLogBody
+  getChangeLogBody,
+  getNotTypeTips
 } from '../format'
 
 const mockData = [
@@ -817,4 +818,30 @@ test('src/utils/format.ts getPreStr', () => {
   ).toBe(
     'body1<br /><br />⚠️重点注意<br /> footer1<br /><br />body2<br /><br />⚠️重点注意<br /> footer2'
   )
+})
+
+test('src/utils/format.ts getNotTypeTips', () => {
+  expect(getNotTypeTips([], {})).toBe('')
+
+  expect(
+    getNotTypeTips(
+      [
+        {
+          subject: 'subject'
+        }
+      ],
+      {}
+    )
+  ).toBe('## 没有Type不符合规范的提交有 (1)\n\nsubject')
+
+  expect(
+    getNotTypeTips(
+      [
+        {
+          subject: 'Merge pull request #3 from threfo/test_merge'
+        }
+      ],
+      {}
+    )
+  ).toBe('')
 })
