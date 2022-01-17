@@ -38,11 +38,11 @@ footer?
 在上图复制内容黏贴提交
 
 ```bash
-git commit -m "--story=100000 --user=Thomas 【管理后台配置】后台配置快捷组件 https://www.tapd.cn/23766501/s/1240224"
+git commit -m "--story=100000 --user=Thomas 【管理后台配置】后台配置快捷组件 https://www.tapd.cn/12345/s/1240224"
 
 # 或者
 
-git commit -m "feat: --story=100000 --user=Thomas 【管理后台配置】后台配置快捷组件 https://www.tapd.cn/23766501/s/1240224"
+git commit -m "feat: --story=100000 --user=Thomas 【管理后台配置】后台配置快捷组件 https://www.tapd.cn/12345/s/1240224"
 
 # 或者
 
@@ -58,14 +58,14 @@ git commit -m "story(管理后台配置): 后台配置快捷组件 #100000"
 
 <details>
 <summary>后台配置快捷组件</summary>
-2022/01/05 06:14 | <a href="https://github.com/threfo/change_log_action/commit/111" title="thomas-ballo | liurongliang@balloai.com" target="_blank">详细代码</a> | <a href="https://www.tapd.cn/23766501/s/1240224" target="_blank">issue 100000</a>
+2022/01/05 06:14 | <a href="https://github.com/threfo/change_log_action/commit/111" title="thomas-ballo | liurongliang@balloai.com" target="_blank">详细代码</a> | <a href="https://www.tapd.cn/12345/s/1240224" target="_blank">issue 100000</a>
 </details>
 ```
 
 ### api 或配置 变更/新增时建议
 
 ```bash
-git commit -m "feat: --story=100000 --user=Thomas 【管理后台配置】后台配置快捷组件 https://www.tapd.cn/23766501/s/1240224
+git commit -m "feat: --story=100000 --user=Thomas 【管理后台配置】后台配置快捷组件 https://www.tapd.cn/12345/s/1240224
 dquote>
 dquote> api的调用参数或者ypai链接，实例变更脚本链接，配置链接或者示例等
 dquote>
@@ -83,7 +83,7 @@ dquote> 新增 resume_version 版本控制配置"
 
 <details>
 <summary>后台配置快捷组件</summary>
-2022/01/05 06:14 | <a href="https://github.com/threfo/change_log_action/commit/111" title="thomas-ballo | liurongliang@balloai.com" target="_blank">详细代码</a> | <a href="https://www.tapd.cn/23766501/s/1240224" target="_blank">issue 100000</a>
+2022/01/05 06:14 | <a href="https://github.com/threfo/change_log_action/commit/111" title="thomas-ballo | liurongliang@balloai.com" target="_blank">详细代码</a> | <a href="https://www.tapd.cn/12345/s/1240224" target="_blank">issue 100000</a>
 api的调用参数或者ypai链接，实例变更脚本链接等
 
 新增 get /test/api?t=把变更的 api 或者新增的 api 填在这里
@@ -99,7 +99,7 @@ api的调用参数或者ypai链接，实例变更脚本链接等
 新增 resume_version 版本控制配置</summary>
 api的调用参数或者ypai链接，实例变更脚本链接，配置链接或者示例等
 
-2022/01/05 06:14 | <a href="https://github.com/threfo/change_log_action/commit/111" title="thomas-ballo | liurongliang@balloai.com" target="_blank">详细代码</a> | <a href="https://www.tapd.cn/23766501/s/1240224" target="_blank">issue 100000</a>
+2022/01/05 06:14 | <a href="https://github.com/threfo/change_log_action/commit/111" title="thomas-ballo | liurongliang@balloai.com" target="_blank">详细代码</a> | <a href="https://www.tapd.cn/12345/s/1240224" target="_blank">issue 100000</a>
 
 </details>
 ```
@@ -110,10 +110,10 @@ api的调用参数或者ypai链接，实例变更脚本链接，配置链接或�
 
 ```bash
 # 第一次提交
-git commit -m "feat: --story=100000 --user=Thomas 【管理后台配置】后台配置快捷组件 https://www.tapd.cn/23766501/s/1240224"
+git commit -m "feat: --story=100000 --user=Thomas 【管理后台配置】后台配置快捷组件 https://www.tapd.cn/12345/s/1240224"
 
 # 第二次提交
-git commit -m "feat: --story=100000 --user=Thomas 【管理后台配置】后台配置快捷组件 https://www.tapd.cn/23766501/s/1240224
+git commit -m "feat: --story=100000 --user=Thomas 【管理后台配置】后台配置快捷组件 https://www.tapd.cn/12345/s/1240224
 dquote>
 dquote> 修改拼写错误"
 
@@ -132,9 +132,9 @@ dquote> 修改拼写错误"
 
 <details>
 <summary>后台配置快捷组件</summary>
-2022/01/05 06:14 | <a href="https://github.com/threfo/change_log_action/commit/111" title="thomas-ballo | liurongliang@balloai.com" target="_blank">详细代码</a> | <a href="https://www.tapd.cn/23766501/s/1240224" target="_blank">issue 100000</a>
+2022/01/05 06:14 | <a href="https://github.com/threfo/change_log_action/commit/111" title="thomas-ballo | liurongliang@balloai.com" target="_blank">详细代码</a> | <a href="https://www.tapd.cn/12345/s/1240224" target="_blank">issue 100000</a>
 
-2022/01/06 00:14 | <a href="https://github.com/threfo/change_log_action/commit/111" title="thomas-ballo | liurongliang@balloai.com" target="_blank">详细代码</a> | <a href="https://www.tapd.cn/23766501/s/1240224" target="_blank">issue 100000</a>
+2022/01/06 00:14 | <a href="https://github.com/threfo/change_log_action/commit/111" title="thomas-ballo | liurongliang@balloai.com" target="_blank">详细代码</a> | <a href="https://www.tapd.cn/12345/s/1240224" target="_blank">issue 100000</a>
 修改拼写错误
 
 </details>

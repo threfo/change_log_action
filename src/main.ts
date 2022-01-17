@@ -4,7 +4,7 @@ import {debug, getInput, setFailed} from '@actions/core'
 import {context} from '@actions/github'
 import {runAction} from './runner'
 
-console.log('github.context', context)
+// console.log('github.context', context)
 
 async function run(): Promise<void> {
   try {
