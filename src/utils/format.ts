@@ -10,7 +10,8 @@ const notGitMoJiStartExp =
 const tapdExp =
   /^--(?<type>\w*)\W(?<ticket>\d*)(?:\s\S*)?\s(?:【(?<scope>.*)】)?(?<subject>(?:(?!h).)*(?:(?!\s).))\s?(?<issueUrl>http.*)?$/
 
-export const mergeExp = /^Merge\s(pull request|branch|commit)\s/
+export const mergeExp =
+  /^Merge\s(pull request|branch|commit|remote-tracking branch)\s/
 
 export const fixColon = (str: string) => {
   return str.replace(/：/g, ':')
