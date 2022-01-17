@@ -99,7 +99,7 @@ const moment_1 = __importDefault(__nccwpck_require__(9623));
 const gitMoJiStartExp = /^(?::\w*:|(?:\ud83c[\udf00-\udfff])|(?:\ud83d[\udc00-\ude4f\ude80-\udeff])|[\u2600-\u2B55])\s(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/;
 const notGitMoJiStartExp = /^(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/;
 const tapdExp = /^--(?<type>\w*)\W(?<ticket>\d*)(?:\s\S*)?\s(?:【(?<scope>.*)】)?(?<subject>(?:(?!h).)*(?:(?!\s).))\s?(?<issueUrl>http.*)?$/;
-exports.mergeExp = /^Merge\s(pull request|branch|commit)\s/;
+exports.mergeExp = /^Merge\s(pull request|branch|commit|remote-tracking branch)\s/;
 const fixColon = (str) => {
     return str.replace(/：/g, ':');
 };
