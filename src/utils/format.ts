@@ -275,9 +275,13 @@ export const getNotTypeTips = (
   notTypeArr: any[],
   inputOptions: InputOptionsType
 ) => {
-  const showList = notTypeArr.filter(
-    ({subject}) => subject.indexOf('Merge pull request') === -1
-  )
+  const showList = notTypeArr.filter(({subject}) => {
+    return (
+      subject.indexOf('Merge pull request') === -1 ||
+      subject.indexOf('Merge branch') === -1 ||
+      subject.indexOf('Merge commit') === -1
+    )
+  })
 
   return getTitleAndBodyMd(
     `## 没有Type不符合规范的提交有 (${showList.length})`,
