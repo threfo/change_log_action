@@ -1,5 +1,6 @@
 import axios, {AxiosRequestConfig} from 'axios'
 import path from 'path'
+import {stringify} from 'querystring'
 
 import {context} from '@actions/github'
 import {getInput} from '@actions/core'
@@ -42,8 +43,13 @@ export const getUpdatePrUrl = (): string => {
   return `https://api.github.com/repos/${getRepository()}/pulls/${getPullNumber()}`
 }
 
-export const getPrCommitsUrl = (): string => {
-  return `https://api.github.com/repos/${getRepository()}/pulls/${getPullNumber()}/commits`
+export const getPrCommitsUrl = (query: {
+  per_page: number
+  page: number
+}): string => {
+  return `https://api.github.com/repos/${getRepository()}/pulls/${getPullNumber()}/commits?${stringify(
+    query
+  )}`
 }
 
 export const getCommentPrUrl = (): string => {
@@ -99,16 +105,34 @@ export const getCommentPrProps = (body: string): AxiosRequestConfig => {
   }
 }
 
-export const getPrCommitsProps = (): AxiosRequestConfig => {
+export const getPrCommitsProps = (page = 1): AxiosRequestConfig => {
   // console.log('getPrCommitsProps')
   return {
     method: 'GET',
     headers: getHeaders(),
-    url: getPrCommitsUrl()
+    url: getPrCommitsUrl({
+      per_page: 100,
+      page
+    })
   }
 }
 
-export const getPrCommits = async () => await axios(getPrCommitsProps())
+export const getPrCommits = async () => {
+  let list = []
+  let page = 1
+
+  const returnList = []
+
+  do {
+    const {data} = await axios(getPrCommitsProps(page))
+    list = data
+    if (list.length) {
+      returnList.push(...data)
+    }
+  } while (list.length === 0)
+
+  return returnList
+}
 
 export const closePr = async (title: string, body: string) =>
   await axios(getClosePrAxiosProps(title, body))

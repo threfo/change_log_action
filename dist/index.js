@@ -62,10 +62,8 @@ const utils_1 = __nccwpck_require__(1606);
 const format_1 = __nccwpck_require__(1264);
 const runAction = (inputOptions) => __awaiter(void 0, void 0, void 0, function* () {
     // 获取 commit list
-    const res = yield (0, utils_1.getPrCommits)();
+    const list = yield (0, utils_1.getPrCommits)();
     // console.log('getPrCommits res', res)
-    const { data } = res || {};
-    const list = data;
     // console.log('getPrCommits list', list)
     // 解析 格式化 list
     // 评论到当前 pr
@@ -96,11 +94,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getCommentBody = exports.getChangeLogBody = exports.needNoticeStr = exports.getNotTypeTips = exports.commitItem2Changelog = exports.getTitleAndBodyMd = exports.getDetailsMd = exports.getPreHeader = exports.getDateMd = exports.getCodeMd = exports.getPreStr = exports.getIssueUrlMd = exports.getIssueUrl = exports.commitListObj2CommentBodyObj = exports.getCommitObj = exports.message2Obj = exports.header2Obj = exports.tapd2Obj = exports.notGitMoJiTitle2Obj = exports.haveGitMoJiTitle2Obj = exports.fixColon = void 0;
+exports.getCommentBody = exports.getChangeLogBody = exports.needNoticeStr = exports.getNotTypeTips = exports.commitItem2Changelog = exports.getTitleAndBodyMd = exports.getDetailsMd = exports.getPreHeader = exports.getDateMd = exports.getCodeMd = exports.getPreStr = exports.getIssueUrlMd = exports.getIssueUrl = exports.commitListObj2CommentBodyObj = exports.getCommitObj = exports.message2Obj = exports.header2Obj = exports.tapd2Obj = exports.notGitMoJiTitle2Obj = exports.haveGitMoJiTitle2Obj = exports.fixColon = exports.mergeExp = void 0;
 const moment_1 = __importDefault(__nccwpck_require__(9623));
 const gitMoJiStartExp = /^(?::\w*:|(?:\ud83c[\udf00-\udfff])|(?:\ud83d[\udc00-\ude4f\ude80-\udeff])|[\u2600-\u2B55])\s(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/;
 const notGitMoJiStartExp = /^(?<type>\w*)(?:\((?<scope>.*)\))?!?:\s(?<subject>(?:(?!#).)*(?:(?!\s).))\s?(?<ticket>#\d*)?$/;
 const tapdExp = /^--(?<type>\w*)\W(?<ticket>\d*)(?:\s\S*)?\s(?:【(?<scope>.*)】)?(?<subject>(?:(?!h).)*(?:(?!\s).))\s?(?<issueUrl>http.*)?$/;
+exports.mergeExp = /^Merge\s(pull request|branch|commit)\s/;
 const fixColon = (str) => {
     return str.replace(/：/g, ':');
 };
@@ -314,7 +313,9 @@ const commitItem2Changelog = (item, inputOptions) => {
 };
 exports.commitItem2Changelog = commitItem2Changelog;
 const getNotTypeTips = (notTypeArr, inputOptions) => {
-    const showList = notTypeArr.filter(({ subject }) => subject.indexOf('Merge pull request') === -1);
+    const showList = notTypeArr.filter(({ subject }) => {
+        return !exports.mergeExp.test(subject);
+    });
     return (0, exports.getTitleAndBodyMd)(`## 没有Type不符合规范的提交有 (${showList.length})`, showList
         .map((item) => (0, exports.commitItem2Changelog)(item, inputOptions))
         .filter(i => i)
@@ -402,6 +403,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.commentPr = exports.closePr = exports.getPrCommits = exports.getPrCommitsProps = exports.getCommentPrProps = exports.getClosePrAxiosProps = exports.getUpdatePrAxiosProps = exports.getHeaders = exports.getGithubToken = exports.getCommentPrUrl = exports.getPrCommitsUrl = exports.getUpdatePrUrl = exports.getPrCommitId = exports.getPullNumber = exports.getRepository = exports.getPackageJson = exports.getPackageJsonPath = exports.getProjectFilePath = void 0;
 const axios_1 = __importDefault(__nccwpck_require__(6545));
 const path_1 = __importDefault(__nccwpck_require__(5622));
+const querystring_1 = __nccwpck_require__(1191);
 const github_1 = __nccwpck_require__(5438);
 const core_1 = __nccwpck_require__(2186);
 const getProjectFilePath = (filePathInProject) => {
@@ -442,8 +444,8 @@ const getUpdatePrUrl = () => {
     return `https://api.github.com/repos/${(0, exports.getRepository)()}/pulls/${(0, exports.getPullNumber)()}`;
 };
 exports.getUpdatePrUrl = getUpdatePrUrl;
-const getPrCommitsUrl = () => {
-    return `https://api.github.com/repos/${(0, exports.getRepository)()}/pulls/${(0, exports.getPullNumber)()}/commits`;
+const getPrCommitsUrl = (query) => {
+    return `https://api.github.com/repos/${(0, exports.getRepository)()}/pulls/${(0, exports.getPullNumber)()}/commits?${(0, querystring_1.stringify)(query)}`;
 };
 exports.getPrCommitsUrl = getPrCommitsUrl;
 const getCommentPrUrl = () => {
@@ -492,16 +494,31 @@ const getCommentPrProps = (body) => {
     };
 };
 exports.getCommentPrProps = getCommentPrProps;
-const getPrCommitsProps = () => {
+const getPrCommitsProps = (page = 1) => {
     // console.log('getPrCommitsProps')
     return {
         method: 'GET',
         headers: (0, exports.getHeaders)(),
-        url: (0, exports.getPrCommitsUrl)()
+        url: (0, exports.getPrCommitsUrl)({
+            per_page: 100,
+            page
+        })
     };
 };
 exports.getPrCommitsProps = getPrCommitsProps;
-const getPrCommits = () => __awaiter(void 0, void 0, void 0, function* () { return yield (0, axios_1.default)((0, exports.getPrCommitsProps)()); });
+const getPrCommits = () => __awaiter(void 0, void 0, void 0, function* () {
+    let list = [];
+    let page = 1;
+    const returnList = [];
+    do {
+        const { data } = yield (0, axios_1.default)((0, exports.getPrCommitsProps)(page));
+        list = data;
+        if (list.length) {
+            returnList.push(...data);
+        }
+    } while (list.length === 0);
+    return returnList;
+});
 exports.getPrCommits = getPrCommits;
 const closePr = (title, body) => __awaiter(void 0, void 0, void 0, function* () { return yield (0, axios_1.default)((0, exports.getClosePrAxiosProps)(title, body)); });
 exports.closePr = closePr;
@@ -8197,9 +8214,9 @@ RedirectableRequest.prototype._processResponse = function (response) {
     var redirectUrlParts = url.parse(redirectUrl);
     Object.assign(this._options, redirectUrlParts);
 
-    // Drop the Authorization header if redirecting to another domain
+    // Drop the confidential headers when redirecting to another domain
     if (!(redirectUrlParts.host === currentHost || isSubdomainOf(redirectUrlParts.host, currentHost))) {
-      removeMatchingHeaders(/^authorization$/i, this._options.headers);
+      removeMatchingHeaders(/^(?:authorization|cookie)$/i, this._options.headers);
     }
 
     // Evaluate the beforeRedirect callback
@@ -8381,12 +8398,12 @@ module.exports.wrap = wrap;
 
 "use strict";
 
-module.exports = (flag, argv) => {
-	argv = argv || process.argv;
+
+module.exports = (flag, argv = process.argv) => {
 	const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
-	const pos = argv.indexOf(prefix + flag);
-	const terminatorPos = argv.indexOf('--');
-	return pos !== -1 && (terminatorPos === -1 ? true : pos < terminatorPos);
+	const position = argv.indexOf(prefix + flag);
+	const terminatorPosition = argv.indexOf('--');
+	return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
 };
 
 
@@ -15695,9 +15712,17 @@ AbortError.prototype = Object.create(Error.prototype);
 AbortError.prototype.constructor = AbortError;
 AbortError.prototype.name = 'AbortError';
 
+const URL$1 = Url.URL || whatwgUrl.URL;
+
 // fix an issue where "PassThrough", "resolve" aren't a named export for node <10
 const PassThrough$1 = Stream.PassThrough;
-const resolve_url = Url.resolve;
+
+const isDomainOrSubdomain = function isDomainOrSubdomain(destination, original) {
+	const orig = new URL$1(original).hostname;
+	const dest = new URL$1(destination).hostname;
+
+	return orig === dest || orig[orig.length - dest.length - 1] === '.' && orig.endsWith(dest);
+};
 
 /**
  * Fetch function
@@ -15785,7 +15810,19 @@ function fetch(url, opts) {
 				const location = headers.get('Location');
 
 				// HTTP fetch step 5.3
-				const locationURL = location === null ? null : resolve_url(request.url, location);
+				let locationURL = null;
+				try {
+					locationURL = location === null ? null : new URL$1(location, request.url).toString();
+				} catch (err) {
+					// error here can only be invalid URL in Location: header
+					// do not throw when options.redirect == manual
+					// let the user extract the errorneous redirect URL
+					if (request.redirect !== 'manual') {
+						reject(new FetchError(`uri requested responds with an invalid redirect URL: ${location}`, 'invalid-redirect'));
+						finalize();
+						return;
+					}
+				}
 
 				// HTTP fetch step 5.5
 				switch (request.redirect) {
@@ -15832,6 +15869,12 @@ function fetch(url, opts) {
 							timeout: request.timeout,
 							size: request.size
 						};
+
+						if (!isDomainOrSubdomain(request.url, locationURL)) {
+							for (const name of ['authorization', 'www-authenticate', 'cookie', 'cookie2']) {
+								requestOpts.headers.delete(name);
+							}
+						}
 
 						// HTTP-redirect fetch step 9
 						if (res.statusCode !== 303 && request.body && getTotalBytes(request) === null) {
@@ -18180,23 +18223,32 @@ function onceStrict (fn) {
 "use strict";
 
 const os = __nccwpck_require__(2087);
+const tty = __nccwpck_require__(3867);
 const hasFlag = __nccwpck_require__(1621);
 
-const env = process.env;
+const {env} = process;
 
 let forceColor;
 if (hasFlag('no-color') ||
 	hasFlag('no-colors') ||
-	hasFlag('color=false')) {
-	forceColor = false;
+	hasFlag('color=false') ||
+	hasFlag('color=never')) {
+	forceColor = 0;
 } else if (hasFlag('color') ||
 	hasFlag('colors') ||
 	hasFlag('color=true') ||
 	hasFlag('color=always')) {
-	forceColor = true;
+	forceColor = 1;
 }
+
 if ('FORCE_COLOR' in env) {
-	forceColor = env.FORCE_COLOR.length === 0 || parseInt(env.FORCE_COLOR, 10) !== 0;
+	if (env.FORCE_COLOR === 'true') {
+		forceColor = 1;
+	} else if (env.FORCE_COLOR === 'false') {
+		forceColor = 0;
+	} else {
+		forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
+	}
 }
 
 function translateLevel(level) {
@@ -18212,8 +18264,8 @@ function translateLevel(level) {
 	};
 }
 
-function supportsColor(stream) {
-	if (forceColor === false) {
+function supportsColor(haveStream, streamIsTTY) {
+	if (forceColor === 0) {
 		return 0;
 	}
 
@@ -18227,22 +18279,21 @@ function supportsColor(stream) {
 		return 2;
 	}
 
-	if (stream && !stream.isTTY && forceColor !== true) {
+	if (haveStream && !streamIsTTY && forceColor === undefined) {
 		return 0;
 	}
 
-	const min = forceColor ? 1 : 0;
+	const min = forceColor || 0;
+
+	if (env.TERM === 'dumb') {
+		return min;
+	}
 
 	if (process.platform === 'win32') {
-		// Node.js 7.5.0 is the first version of Node.js to include a patch to
-		// libuv that enables 256 color output on Windows. Anything earlier and it
-		// won't work. However, here we target Node.js 8 at minimum as it is an LTS
-		// release, and Node.js 7 is not. Windows 10 build 10586 is the first Windows
-		// release that supports 256 colors. Windows 10 build 14931 is the first release
-		// that supports 16m/TrueColor.
+		// Windows 10 build 10586 is the first Windows release that supports 256 colors.
+		// Windows 10 build 14931 is the first release that supports 16m/TrueColor.
 		const osRelease = os.release().split('.');
 		if (
-			Number(process.versions.node.split('.')[0]) >= 8 &&
 			Number(osRelease[0]) >= 10 &&
 			Number(osRelease[2]) >= 10586
 		) {
@@ -18253,7 +18304,7 @@ function supportsColor(stream) {
 	}
 
 	if ('CI' in env) {
-		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
+		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'GITHUB_ACTIONS', 'BUILDKITE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
 			return 1;
 		}
 
@@ -18292,22 +18343,18 @@ function supportsColor(stream) {
 		return 1;
 	}
 
-	if (env.TERM === 'dumb') {
-		return min;
-	}
-
 	return min;
 }
 
 function getSupportLevel(stream) {
-	const level = supportsColor(stream);
+	const level = supportsColor(stream, stream && stream.isTTY);
 	return translateLevel(level);
 }
 
 module.exports = {
 	supportsColor: getSupportLevel,
-	stdout: getSupportLevel(process.stdout),
-	stderr: getSupportLevel(process.stderr)
+	stdout: translateLevel(supportsColor(true, tty.isatty(1))),
+	stderr: translateLevel(supportsColor(true, tty.isatty(2)))
 };
 
 
@@ -18744,6 +18791,14 @@ module.exports = require("path");
 
 "use strict";
 module.exports = require("punycode");
+
+/***/ }),
+
+/***/ 1191:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("querystring");
 
 /***/ }),
 
